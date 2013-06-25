@@ -1,0 +1,9 @@
+dependencies {
+    compile project(":core")
+}
+
+jar {
+    manifest {
+        attributes['Main-Class'] = 'org.gethydrated.swarm.launcher.Main'
+    }
+}

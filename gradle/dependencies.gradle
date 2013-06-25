@@ -1,0 +1,20 @@
+ext.libraries = [:]
+
+libraries.modules = 'org.jboss.modules:jboss-modules:1.2.2.Final@jar'
+
+libraries.slf4j_api = 'org.slf4j:slf4j-api:1.7.2@jar'
+libraries.logback_core = 'ch.qos.logback:logback-core:1.0.9@jar'
+libraries.logback_classic = dependencies.module('ch.qos.logback:logback-classic:1.0.9') {
+    dependency libraries.logback_core
+    dependency libraries.slf4j_api
+}
+
+//libraries.hydra_api = 'org.gethydrated:hydra-api:1.0.0@jar'
+//libraries.hydra_core = dependencies.module('org.gethydrated:hydra-core:1.0.0@jar') {
+//    dependency libraries.hydra_api
+//}
+
+libraries += [
+    junit: 'junit:junit:4.11',
+    netty: 'io.netty:netty-all:4.0.0.CR5'
+]

@@ -1,0 +1,41 @@
+import org.gradle.build.BuildTypes
+
+defaultTasks 'assemble'
+apply plugin: 'java-base'
+archivesBaseName = 'swarm'
+
+extensions.buildTypes = new BuildTypes(project)
+
+buildTypes {
+	packageBuild "clean", "assemble", "buildDists"
+}
+
+apply from: "gradle/dependencies.gradle"
+apply from: "gradle/version.gradle"
+apply from: "gradle/idea.gradle"
+
+allprojects {
+	group = 'org.gethydrated.swarm'
+
+	repositories {
+        mavenCentral()
+		mavenLocal()
+	}
+}
+
+subprojects { subproject ->
+	version = rootProject.version
+	apply plugin: 'java'
+}
+
+configurations {
+	runtime
+	modules
+}
+
+dependencies {
+	runtime project(':launcher')
+	modules libraries.modules
+}
+
+evaluationDependsOn ":dist"

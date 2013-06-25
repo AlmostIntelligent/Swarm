@@ -1,0 +1,12 @@
+dependencies {
+	compile project(":spec")
+    compile libraries.slf4j_api
+    compile libraries.logback_core
+    compile libraries.logback_classic
+    //compile libraries.hydra_api
+    //compile libraries.hydra_core
+    compile libraries.netty
+
+    testCompile libraries.junit
+
+}

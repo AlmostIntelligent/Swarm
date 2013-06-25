@@ -1,0 +1,65 @@
+configurations.all {
+	artifacts.clear()
+}
+
+tasks.remove(jar)
+
+tasks.withType(AbstractArchiveTask) {
+	baseName "swarm"
+	
+	destinationDir = rootProject.distsDir
+	clean.delete archivePath
+}
+
+dependencies {
+	testCompile project(':core')
+    testCompile project(':launcher')
+}
+
+configurations {
+    dists
+}
+
+evaluationDependsOn ':launcher'
+
+ext {
+    distRootFolder = "swarm-$version"
+
+    modulesImage = copySpec {
+        rootProject.configurations.runtime.resolvedConfiguration.resolvedArtifacts.each { artifact ->
+            from (artifact.file) {
+                target = artifact.moduleVersion.id.group.replace(".", "/")
+                into ("modules/${target}/${artifact.name}/main")
+            }
+        }
+    }
+
+	binDistImage = copySpec {
+
+        from('src/main/resources') {
+            include '*/**'
+        }
+		from (rootProject.configurations.modules) {
+            rename '(.*).jar', 'jboss-modules.jar'
+        }
+        with (modulesImage)
+	}
+}
+
+task dist(type: Copy, dependsOn: ':launcher:assemble') {
+	destinationDir = rootProject.buildDir
+	into(distRootFolder) {
+		with binDistImage
+	}
+}
+
+task binZip(type: Zip, dependsOn: 'dist') {
+    classifier = 'bin'
+    into(distRootFolder) {
+        with binDistImage
+    }
+}
+
+artifacts {
+	dists binZip
+}

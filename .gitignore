@@ -4,3 +4,16 @@
 *.jar
 *.war
 *.ear
+
+.DS_Store
+.classpath
+.project
+.gradle
+.settings
+.idea
+*.iml
+*.ipr
+*.iws
+bin
+build
+out
