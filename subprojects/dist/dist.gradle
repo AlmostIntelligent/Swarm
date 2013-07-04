@@ -12,7 +12,8 @@ tasks.withType(AbstractArchiveTask) {
 }
 
 dependencies {
-	testCompile project(':core')
+    testCompile project(':server')
+	testCompile project(':servlet')
     testCompile project(':launcher')
 }
 
@@ -29,7 +30,8 @@ ext {
         rootProject.configurations.runtime.resolvedConfiguration.resolvedArtifacts.each { artifact ->
             from (artifact.file) {
                 target = artifact.moduleVersion.id.group.replace(".", "/")
-                into ("modules/${target}/${artifact.name}/main")
+                name = artifact.name.replace("javax", "").replace(".", "")
+                into ("modules/system/layers/base/${target}/${name}/main")
             }
         }
     }

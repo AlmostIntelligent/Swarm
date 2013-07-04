@@ -1,5 +1,14 @@
+
+apply from: "$rootDir/gradle/provided.gradle"
+
 dependencies {
-    compile project(":core")
+    compile project(":servlet")
+    compile project(":server")
+    compile libraries.logback_core
+    compile libraries.logback_classic
+    provided libraries.vfs
+    provided libraries.modules
+    compile libraries.javassist
 }
 
 jar {

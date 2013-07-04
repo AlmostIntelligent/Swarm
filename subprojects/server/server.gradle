@@ -1,0 +1,7 @@
+apply from: "$rootDir/gradle/provided.gradle"
+
+dependencies {
+    compile project(":spec")
+    compile libraries.netty
+    compile libraries.slf4j_api
+}

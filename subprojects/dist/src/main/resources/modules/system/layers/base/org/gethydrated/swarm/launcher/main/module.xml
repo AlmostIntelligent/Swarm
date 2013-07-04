@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<module xmlns="urn:jboss:module:1.1" name="org.gethydrated.swarm.launcher">
+    <properties>
+        <property name="swarm.api" value="private"/>
+    </properties>
+
+    <main-class name="org.gethydrated.swarm.launcher.Main"/>
+
+    <resources>
+        <resource-root path="launcher-1.0.0-SNAPSHOT.jar"/>
+    </resources>
+
+    <dependencies>
+		<module name="org.gethydrated.swarm.servlet"/>
+		<module name="org.gethydrated.swarm.server"/>
+		<module name="org.gethydrated.swarm.deploy"/>
+		<module name="org.jboss.modules"/>
+		<module name="org.jboss.jboss-vfs"/>
+		<module name="org.slf4j.slf4j-api"/>
+		<module name="javax.servlet.servlet-api"/>
+    </dependencies>
+</module>

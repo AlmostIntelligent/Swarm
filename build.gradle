@@ -36,6 +36,7 @@ configurations {
 dependencies {
 	runtime project(':launcher')
 	modules libraries.modules
+    runtime libraries.vfs
 }
 
 evaluationDependsOn ":dist"

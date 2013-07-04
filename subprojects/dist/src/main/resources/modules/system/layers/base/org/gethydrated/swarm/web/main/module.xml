@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<module xmlns="urn:jboss:module:1.1" name="org.gethydrated.swarm.web">
+    <properties>
+        <property name="swarm.api" value="private"/>
+    </properties>
+
+    <resources>
+    </resources>
+
+    <dependencies>
+        <module name="javax.servlet.servlet-api"/>
+        <module name="org.gethydrated.swarm.servlet"/>
+        <module name="org.apache.tomcat.tomcat-jasper"/>
+    </dependencies>
+</module>
