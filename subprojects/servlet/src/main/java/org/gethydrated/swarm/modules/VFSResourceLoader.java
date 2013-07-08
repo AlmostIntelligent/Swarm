@@ -1,8 +1,10 @@
-package org.gethydrated.swarm.deploy.modules;
+package org.gethydrated.swarm.modules;
 
 import org.jboss.modules.*;
 import org.jboss.vfs.*;
 import org.jboss.vfs.util.FilterVirtualFileVisitor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -21,6 +23,7 @@ import java.util.jar.Manifest;
  */
 public class VFSResourceLoader extends AbstractResourceLoader {
 
+    private final Logger logger = LoggerFactory.getLogger(VFSResourceLoader.class);
     private final VirtualFile root;
     private final URL rootUrl;
     private final Manifest manifest;

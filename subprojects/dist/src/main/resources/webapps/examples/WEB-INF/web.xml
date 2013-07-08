@@ -30,7 +30,7 @@
 
     <!-- Define example filters -->
     <filter>
-        <filter-name>Timing filter</filter-name>
+        <filter-name>Timingfilter</filter-name>
         <filter-class>filters.ExampleFilter</filter-class>
         <init-param>
             <param-name>attribute</param-name>
@@ -40,7 +40,7 @@
 
     <!-- Define filter mappings for the timing filters -->
     <filter-mapping>
-        <filter-name>Timing Filter</filter-name>
+        <filter-name>Timingfilter</filter-name>
         <url-pattern>/*</url-pattern>
     </filter-mapping>
 
@@ -108,11 +108,11 @@
     <servlet>
         <servlet-name>CookieExample</servlet-name>
         <servlet-class>CookieExample</servlet-class>
-    </servlet> <!--
+    </servlet>
     <servlet>
         <servlet-name>SessionExample</servlet-name>
         <servlet-class>SessionExample</servlet-class>
-    </servlet>
+    </servlet><!--
 
     <servlet-mapping>
         <servlet-name>ChatServlet</servlet-name>
@@ -141,11 +141,11 @@
     <servlet-mapping>
         <servlet-name>CookieExample</servlet-name>
         <url-pattern>/servlets/servlet/CookieExample</url-pattern>
-    </servlet-mapping>  <!--
+    </servlet-mapping>
     <servlet-mapping>
         <servlet-name>SessionExample</servlet-name>
         <url-pattern>/servlets/servlet/SessionExample</url-pattern>
-    </servlet-mapping>
+    </servlet-mapping> <!--
     <servlet-mapping>
         <servlet-name>ServletToJsp</servlet-name>
         <url-pattern>/servletToJsp</url-pattern>

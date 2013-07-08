@@ -29,16 +29,15 @@ public class ServletContainer extends AbstractContainer implements ServletConfig
         super(name);
     }
 
-    @Override
-    public Logger getLogger() {
-        return null;
-    }
-
-    @Override
     public void invoke(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         if (servletInstance != null && getState() == LifecycleState.RUNNING) {
             servletInstance.service(request, response);
         }
+    }
+
+    @Override
+    public Logger getLogger() {
+        return null;
     }
 
     @Override

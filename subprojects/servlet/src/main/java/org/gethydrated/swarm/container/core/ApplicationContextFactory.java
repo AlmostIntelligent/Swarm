@@ -4,20 +4,14 @@ import org.gethydrated.swarm.deploy.DeploymentDescriptor;
 import org.gethydrated.swarm.deploy.DeploymentDescriptorFactory;
 import org.gethydrated.swarm.deploy.FilterDescriptor;
 import org.gethydrated.swarm.deploy.ServletDescriptor;
+import org.gethydrated.swarm.modules.DeploymentModuleLoader;
+import org.gethydrated.swarm.modules.VFSResourceLoader;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.vfs.VirtualFile;
-import org.jboss.vfs.VirtualFileFilter;
-import org.jboss.vfs.VisitorAttributes;
-import org.jboss.vfs.util.FilterVirtualFileVisitor;
 
 import javax.servlet.FilterRegistration;
 import javax.servlet.ServletRegistration.Dynamic;
-import java.io.IOException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map.Entry;
 
 /**
@@ -43,30 +37,14 @@ public class ApplicationContextFactory {
             }
             reg.addMappingForUrlPatterns(null, true, descriptor.getFilterMapping(d.getName()).getPatterns());
         }
-        Module m = Module.getBootModuleLoader().loadModule(ModuleIdentifier.fromString("org.gethydrated.swarm.web"));
-        ClassLoader cl = createContextClassloader(handle, m.getClassLoader());
-        ctx.setModule(m);
-        ctx.setClassLoader(cl);
+        DeploymentModuleLoader ml = new DeploymentModuleLoader(Module.getBootModuleLoader());
+        ml.addResourceLoader(new VFSResourceLoader(handle, handle.getName()));
+        ml.addResourceLoader(new VFSResourceLoader(handle.getChild("WEB-INF/classes"), "WEB-INF/classes"));
+        ctx.setModuleLoader(ml);
+        Module m = ml.loadModule(ModuleIdentifier.fromString("deploy."+ctx.getName()));
+        ml.relinkModule(m);
         ctx.setRoot(handle);
         return ctx;
-    }
-
-    private static ClassLoader createContextClassloader(VirtualFile handle, ClassLoader parent) throws IOException {
-        if (handle == null || !handle.exists()) {
-            throw new IOException("File handle not found.");
-        }
-        final List<URL> paths = new ArrayList<>();
-        FilterVirtualFileVisitor visitor = new FilterVirtualFileVisitor(new VirtualFileFilter() {
-            @Override
-            public boolean accepts(VirtualFile file) {
-                return file.isDirectory();
-            }
-        }, VisitorAttributes.RECURSE);
-        handle.visit(visitor);
-        for (VirtualFile dir : visitor.getMatched()) {
-            paths.add(dir.toURL());
-        }
-        return new URLClassLoader(paths.toArray(new URL[0]), parent);
     }
 
 }

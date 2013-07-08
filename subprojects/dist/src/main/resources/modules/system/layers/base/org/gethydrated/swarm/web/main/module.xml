@@ -9,8 +9,8 @@
     </resources>
 
     <dependencies>
-        <module name="javax.servlet.servlet-api"/>
-        <module name="org.gethydrated.swarm.servlet"/>
-        <module name="org.apache.tomcat.tomcat-jasper"/>
+        <module name="javax.servlet.servlet-api" export="true"/>
+        <module name="org.gethydrated.swarm.servlet" export="true"/>
+        <module name="org.apache.tomcat.tomcat-jasper" export="true"/>
     </dependencies>
 </module>

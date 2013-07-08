@@ -122,7 +122,11 @@ public class ServletRequestWrapper implements HttpServletRequest {
 
     @Override
     public StringBuffer getRequestURL() {
-        return null;
+        StringBuffer buffer = new StringBuffer();
+        buffer.append("http://");
+        buffer.append(getServerName());
+        buffer.append(getRequestURI());
+        return buffer;
     }
 
     @Override
@@ -271,12 +275,12 @@ public class ServletRequestWrapper implements HttpServletRequest {
 
     @Override
     public String getServerName() {
-        return null;
+        return request.getHost();
     }
 
     @Override
     public int getServerPort() {
-        return 0;
+        return request.getLocalPort();
     }
 
     @Override
@@ -327,7 +331,7 @@ public class ServletRequestWrapper implements HttpServletRequest {
 
     @Override
     public String getRealPath(String path) {
-        return null;
+        return "";
     }
 
     @Override
@@ -337,7 +341,7 @@ public class ServletRequestWrapper implements HttpServletRequest {
 
     @Override
     public String getLocalName() {
-        return null;
+        return request.getHost();
     }
 
     @Override
@@ -347,7 +351,7 @@ public class ServletRequestWrapper implements HttpServletRequest {
 
     @Override
     public int getLocalPort() {
-        return 0;
+        return request.getLocalPort();
     }
 
     @Override

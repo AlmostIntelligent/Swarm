@@ -11,9 +11,11 @@ import java.util.Set;
  *
  */
 public class FilterRegistrationWrapper implements FilterRegistration.Dynamic {
+
+    private final FilterContainer container;
+
     public FilterRegistrationWrapper(FilterContainer container) {
-
-
+        this.container = container;
     }
 
     @Override
@@ -33,7 +35,7 @@ public class FilterRegistrationWrapper implements FilterRegistration.Dynamic {
 
     @Override
     public void addMappingForUrlPatterns(EnumSet<DispatcherType> dispatcherTypes, boolean isMatchAfter, String... urlPatterns) {
-
+        ((ApplicationContext)this.container.getServletContext()).addFilterMappingUrl(dispatcherTypes, isMatchAfter, urlPatterns, container);
     }
 
     @Override
@@ -43,12 +45,12 @@ public class FilterRegistrationWrapper implements FilterRegistration.Dynamic {
 
     @Override
     public String getName() {
-        return null;
+        return container.getFilterName();
     }
 
     @Override
     public String getClassName() {
-        return null;
+        return container.getFilterClass();
     }
 
     @Override

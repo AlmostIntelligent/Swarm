@@ -12,9 +12,8 @@ public class SwarmHttpResponse extends BaseHttpMessage implements HttpResponse, 
 
     private final transient Logger logger = LoggerFactory.getLogger(SwarmHttpResponse.class);
     private boolean keepAlive = false;
-    private StringBuffer content = new StringBuffer();
+    private StringBuffer content;
     private String contentType = "";
-    private int contentLength;
     private int status;
 
     @Override
@@ -29,12 +28,10 @@ public class SwarmHttpResponse extends BaseHttpMessage implements HttpResponse, 
 
     @Override
     public StringBuffer getContentBuffer() {
+        if (content == null) {
+            content = new StringBuffer();
+        }
         return content;
-    }
-
-    public SwarmHttpResponse setContent(StringBuffer content) {
-        this.content = content;
-        return this;
     }
 
     @Override
@@ -49,12 +46,7 @@ public class SwarmHttpResponse extends BaseHttpMessage implements HttpResponse, 
 
     @Override
     public int getContentLength() {
-        return contentLength;
-    }
-
-    public SwarmHttpResponse setContentLength(int contentLength) {
-        this.contentLength = contentLength;
-        return this;
+        return (content != null) ? content.length() : -1;
     }
 
     public void setStatus(int status) {

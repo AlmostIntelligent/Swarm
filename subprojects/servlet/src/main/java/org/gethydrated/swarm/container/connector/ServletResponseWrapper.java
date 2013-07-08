@@ -89,7 +89,7 @@ public class ServletResponseWrapper implements HttpServletResponse {
 
     @Override
     public void addHeader(String name, String value) {
-
+        response.addHeaders(name, value);
     }
 
     @Override
@@ -139,7 +139,7 @@ public class ServletResponseWrapper implements HttpServletResponse {
 
     @Override
     public String getContentType() {
-        return null;
+        return response.getContentType();
     }
 
     @Override

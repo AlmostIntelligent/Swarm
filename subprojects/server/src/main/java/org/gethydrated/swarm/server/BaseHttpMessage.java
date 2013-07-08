@@ -10,6 +10,8 @@ public class BaseHttpMessage implements HttpMessage {
     private String httpVersion;
     private long requestId;
     private Set<Pair> headers = new HashSet<>();
+    private String host;
+    private int localPort;
 
     @Override
     public String getHttpVersion() {
@@ -26,6 +28,10 @@ public class BaseHttpMessage implements HttpMessage {
             this.headers.add(new Pair(e.getKey(), e.getValue()));
         }
         return this;
+    }
+
+    public void addHeaders(String name, String value) {
+        this.headers.add(new Pair(name, value));
     }
 
     @Override
@@ -66,6 +72,24 @@ public class BaseHttpMessage implements HttpMessage {
     public BaseHttpMessage setRequestId(long requestId) {
         this.requestId = requestId;
         return this;
+    }
+
+    public BaseHttpMessage setHost(String host) {
+        this.host = host;
+        return this;
+    }
+
+    public String getHost() {
+        return host;
+    }
+
+    public BaseHttpMessage setLocalPort(int localPort) {
+        this.localPort = localPort;
+        return this;
+    }
+
+    public int getLocalPort() {
+        return localPort;
     }
 
     private static class Pair {

@@ -1,14 +1,10 @@
 package org.gethydrated.swarm.container.core;
 
 import org.gethydrated.swarm.container.Container;
+import org.gethydrated.swarm.container.LifecycleState;
 import org.slf4j.Logger;
 
-import javax.servlet.Filter;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import javax.servlet.*;
 import java.io.IOException;
 import java.util.Enumeration;
 
@@ -24,24 +20,34 @@ public class FilterContainer extends AbstractContainer implements FilterConfig {
         super(name);
     }
 
+    public void invoke(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException {
+        if (getState() == LifecycleState.RUNNING) {
+            filterInstance.doFilter(request, response, filterChain);
+        }
+    }
+
+    /* ------------------------ Container methods --------------------------*/
+
     @Override
     public Logger getLogger() {
         return null;
     }
 
     @Override
-    public void invoke(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-
-    }
-
-    @Override
     public void doInit() {
-
+        if (filterInstance == null) {
+            try {
+                Class<?> clazz = getServletContext().getClassLoader().loadClass(filterClass);
+                filterInstance = (Filter) clazz.newInstance();
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
+        }
     }
 
     @Override
-    public void doStart() {
-
+    public void doStart() throws ServletException {
+        filterInstance.init(this);
     }
 
     @Override
@@ -87,7 +93,7 @@ public class FilterContainer extends AbstractContainer implements FilterConfig {
     }
 
     public void setFilterClass(String filterClass) {
-        if (filterClass == null) {
+        if (this.filterClass == null) {
             this.filterClass = filterClass;
         }
     }
@@ -107,7 +113,7 @@ public class FilterContainer extends AbstractContainer implements FilterConfig {
     public String toString() {
         return "FilterContainer{" +
                 "filterClass='" + filterClass + '\'' +
-                ", filterInstance=" + filterInstance +
                 '}';
     }
+
 }

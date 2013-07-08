@@ -3,9 +3,12 @@ package org.gethydrated.swarm.container.core;
 import org.gethydrated.swarm.container.LifecycleState;
 import org.gethydrated.swarm.container.connector.ServletRequestWrapper;
 import org.gethydrated.swarm.container.connector.ServletResponseWrapper;
+import org.gethydrated.swarm.modules.DeploymentModuleLoader;
 import org.gethydrated.swarm.server.SwarmHttpRequest;
 import org.gethydrated.swarm.server.SwarmHttpResponse;
 import org.jboss.modules.Module;
+import org.jboss.modules.ModuleIdentifier;
+import org.jboss.modules.ModuleLoader;
 import org.jboss.vfs.VirtualFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,10 +45,12 @@ public class ApplicationContext extends AbstractContainer implements ServletCont
 
     private final Map<String, ServletContainer> servletMappings = new HashMap<>();
 
-    private Module applicationModule;
+    private final LinkedList<FilterMapping> filterMappings = new LinkedList();
+
+    private ModuleLoader contextLoader;
     private Module module;
-    private ClassLoader classLoader;
     private VirtualFile root;
+    private Set<String> welcomeFiles = new HashSet<>();
 
     public ApplicationContext() {
         this("ROOT");
@@ -53,6 +58,9 @@ public class ApplicationContext extends AbstractContainer implements ServletCont
 
     public ApplicationContext(String name) {
         super(name);
+        contextLoader = new DeploymentModuleLoader(Module.getBootModuleLoader());
+        welcomeFiles.add("index.html");
+        welcomeFiles.add("index.jsp");
     }
 
     public void invoke(SwarmHttpRequest request, SwarmHttpResponse response) {
@@ -87,6 +95,16 @@ public class ApplicationContext extends AbstractContainer implements ServletCont
         return mappings;
     }
 
+
+    public void addFilterMappingUrl(EnumSet<DispatcherType> dispatcherTypes, boolean matchAfter, String[] urlPatterns, FilterContainer container) {
+        FilterMapping fm = new FilterMapping(dispatcherTypes, urlPatterns, container);
+        if (matchAfter) {
+            filterMappings.add(fm);
+        } else {
+            filterMappings.addFirst(fm);
+        }
+    }
+
     private String mapServlet(String request) {
         String matchedPath = null;
         String matchedType = null;
@@ -106,6 +124,15 @@ public class ApplicationContext extends AbstractContainer implements ServletCont
                 } else {
                     return e.getKey();
                 }
+            //retry wildcards as directory mapping
+            } else if (e.getKey().endsWith("*") && p.matcher(request+"/").matches()) {
+                if (matchedPath == null) {
+                    matchedPath = e.getKey();
+                } else {
+                    if (matchedPath.length() < e.getKey().length()) {
+                        matchedPath = e.getKey();
+                    }
+                }
             }
         }
 
@@ -120,14 +147,30 @@ public class ApplicationContext extends AbstractContainer implements ServletCont
         return (matchedPath != null) ? matchedPath : matchedType;
     }
 
-    /* ----- Container methods ---------------------*/
-
-    @Override
-    public Logger getLogger() {
-        return logger;
+    private List<FilterContainer> mapFilters(String request, String servlet) {
+        List<FilterContainer> mapped = new LinkedList<>();
+        for (FilterMapping fm : filterMappings) {
+            mapped.add(fm.filter);
+        }
+        return mapped;
     }
 
-    @Override
+    public Set<String> getWelcomeFiles() {
+        return Collections.unmodifiableSet(welcomeFiles);
+    }
+
+    public void setRoot(VirtualFile root) {
+        this.root = root;
+    }
+
+    public void setModuleLoader(ModuleLoader contextLoader) {
+        this.contextLoader = contextLoader;
+    }
+
+    public VirtualFile getResourceAsFile(String path) {
+        return root.getChild(path);
+    }
+
     public void invoke(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         if (getState() != LifecycleState.RUNNING) {
             throw new IllegalStateException("Context not in RUNNING state.");
@@ -137,7 +180,8 @@ public class ApplicationContext extends AbstractContainer implements ServletCont
             ServletContainer container = servletMappings.get(matched);
             ((ServletRequestWrapper)request).setServletPath(matched);
 
-            FilterChain chain = new ApplicationFilterChain(container);
+            ApplicationFilterChain chain = new ApplicationFilterChain(container);
+            chain.addFilters(mapFilters(request.getRequestURI(), matched));
             response.setStatus(200);
             chain.doFilter(request, response);
         } catch (Throwable t) {
@@ -145,6 +189,13 @@ public class ApplicationContext extends AbstractContainer implements ServletCont
             t.printStackTrace();
             response.sendError(404);
         }
+    }
+
+    /* ----- Container methods ---------------------*/
+
+    @Override
+    public Logger getLogger() {
+        return logger;
     }
 
     private FilterChain buildFilterChain(final String uri) {
@@ -157,7 +208,8 @@ public class ApplicationContext extends AbstractContainer implements ServletCont
     }
 
     @Override
-    public void doInit() {
+    public void doInit() throws Exception {
+        module = contextLoader.loadModule(ModuleIdentifier.fromString(DeploymentModuleLoader.MODULE_PREFIX + getName()));
         for (ServletContainer c : servlets.values()) {
             c.init();
         }
@@ -240,17 +292,12 @@ public class ApplicationContext extends AbstractContainer implements ServletCont
 
     @Override
     public URL getResource(String path) throws MalformedURLException {
-        return null;
+        return module.getClassLoader().getResource(path);
     }
 
     @Override
     public InputStream getResourceAsStream(String path) {
-        //return classLoader.getResourceAsStream(path);
-        try {
-            return root.getChild(path).openStream();
-        } catch (IOException e) {
-            return null;
-        }
+        return module.getClassLoader().getResourceAsStream(path);
     }
 
     @Override
@@ -416,10 +463,10 @@ public class ApplicationContext extends AbstractContainer implements ServletCont
         return addFilter(filterName, filterClass.getName(), null);
     }
 
-    private FilterRegistration.Dynamic addFilter(String filerName, String className, Filter filter) {
+    private FilterRegistration.Dynamic addFilter(String filterName, String className, Filter filter) {
         className = (className != null && className.equals("")) ? null : className;
 
-        FilterContainer container = filters.get(filerName);
+        FilterContainer container = filters.get(filterName);
 
         if (container != null) {
             if (container.isComplete()) {
@@ -429,11 +476,11 @@ public class ApplicationContext extends AbstractContainer implements ServletCont
             container.setFilterClass(filter);
             return new FilterRegistrationWrapper(container);
         }
-        container = new FilterContainer(filerName);
+        container = new FilterContainer(filterName);
         container.setParent(this);
         container.setFilterClass(className);
         container.setFilterClass(filter);
-        filters.put(filerName, container);
+        filters.put(filterName, container);
         return new FilterRegistrationWrapper(container);
     }
 
@@ -499,7 +546,7 @@ public class ApplicationContext extends AbstractContainer implements ServletCont
 
     @Override
     public ClassLoader getClassLoader() {
-        return classLoader;
+        return module.getClassLoader();
     }
 
     @Override
@@ -520,19 +567,20 @@ public class ApplicationContext extends AbstractContainer implements ServletCont
                 '}';
     }
 
-    public void setModule(Module module) {
-        this.module = module;
-    }
+    private static class FilterMapping {
 
-    public Module getModule() {
-        return module;
-    }
+        private final EnumSet<DispatcherType> dispatcherTypes;
+        private final String[] urlPatterns;
+        private final FilterContainer filter;
 
-    public void setClassLoader(ClassLoader classLoader) {
-        this.classLoader = classLoader;
-    }
-
-    public void setRoot(VirtualFile root) {
-        this.root = root;
+        public FilterMapping(EnumSet<DispatcherType> dispatcherTypes, String[] urlPatterns, FilterContainer filter) {
+            if (dispatcherTypes == null) {
+                this.dispatcherTypes = EnumSet.of(DispatcherType.REQUEST);
+            } else {
+                this.dispatcherTypes = dispatcherTypes;
+            }
+            this.urlPatterns = urlPatterns;
+            this.filter = filter;
+        }
     }
 }
