@@ -9,6 +9,6 @@
 *.iml
 *.ipr
 *.iws
-bin
-build
-out
+bin/
+build/
+out/

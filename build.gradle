@@ -1,4 +1,4 @@
-import org.gradle.build.BuildTypes
+import org.gradle.ext.BuildTypes
 
 defaultTasks 'assemble'
 apply plugin: 'java-base'
