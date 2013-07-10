@@ -1,6 +1,8 @@
 package org.gethydrated.swarm.server;
 
+import javax.servlet.http.Cookie;
 import java.util.Enumeration;
+import java.util.Set;
 
 /**
  *
@@ -16,4 +18,8 @@ public interface HttpMessage {
     Enumeration<String> getHeaders(String name);
 
     Enumeration<String> getHeaderNames();
+
+    Set<Cookie> getCookies();
+
+    void addCookie(Cookie cookie);
 }

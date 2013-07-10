@@ -29,7 +29,8 @@ public class ServletResponseWrapper implements HttpServletResponse {
 
     @Override
     public void addCookie(Cookie cookie) {
-
+        response.addCookie(cookie);
+        cookie.setMaxAge(30000);
     }
 
     @Override

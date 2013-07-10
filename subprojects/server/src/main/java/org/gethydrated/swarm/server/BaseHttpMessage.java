@@ -1,5 +1,7 @@
 package org.gethydrated.swarm.server;
 
+import javax.servlet.http.Cookie;
+import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -10,8 +12,10 @@ public class BaseHttpMessage implements HttpMessage {
     private String httpVersion;
     private long requestId;
     private Set<Pair> headers = new HashSet<>();
-    private String host;
-    private int localPort;
+    private String serverName;
+    private InetSocketAddress localAddr;
+    private InetSocketAddress remoteAddr;
+    private Set<Cookie> cookies = new HashSet<>();
 
     @Override
     public String getHttpVersion() {
@@ -74,22 +78,57 @@ public class BaseHttpMessage implements HttpMessage {
         return this;
     }
 
-    public BaseHttpMessage setHost(String host) {
-        this.host = host;
+    public BaseHttpMessage setServerName(String host) {
+        this.serverName = host;
         return this;
     }
 
-    public String getHost() {
-        return host;
-    }
-
-    public BaseHttpMessage setLocalPort(int localPort) {
-        this.localPort = localPort;
-        return this;
+    public String getServerName() {
+        return serverName;
     }
 
     public int getLocalPort() {
-        return localPort;
+        return localAddr.getPort();
+    }
+
+    public String getLocalAddr() {
+        return localAddr.getAddress().getHostAddress();
+    }
+
+    public String getLocalHost() {
+        return localAddr.getHostName();
+    }
+
+    public int getRemotePort() {
+        return remoteAddr.getPort();
+    }
+
+    public String getRemoteHost() {
+        return remoteAddr.getHostName();
+    }
+
+    public String getRemoteAddr() {
+        return remoteAddr.getAddress().getHostAddress();
+    }
+
+    public BaseHttpMessage setRemoteAddr(InetSocketAddress address) {
+        this.remoteAddr = address;
+        return this;
+    }
+
+    public BaseHttpMessage setLocalAddr(InetSocketAddress address) {
+        this.localAddr = address;
+        return this;
+    }
+
+    @Override
+    public void addCookie(Cookie cookie) {
+        cookies.add(cookie);
+    }
+
+    @Override
+    public Set<Cookie> getCookies() {
+        return cookies;
     }
 
     private static class Pair {

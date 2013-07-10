@@ -9,10 +9,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.Principal;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 /**
  *
@@ -36,7 +33,7 @@ public class ServletRequestWrapper implements HttpServletRequest {
 
     @Override
     public Cookie[] getCookies() {
-        return new Cookie[0];
+        return request.getCookies().toArray(new Cookie[0]);
     }
 
     @Override
@@ -245,22 +242,22 @@ public class ServletRequestWrapper implements HttpServletRequest {
 
     @Override
     public String getParameter(String name) {
-        return null;
+        return request.getParameter(name);
     }
 
     @Override
     public Enumeration<String> getParameterNames() {
-        return null;
+        return Collections.enumeration(getParameterMap().keySet());
     }
 
     @Override
     public String[] getParameterValues(String name) {
-        return new String[0];
+        return request.getParameterValues(name);
     }
 
     @Override
     public Map<String, String[]> getParameterMap() {
-        return null;
+        return request.getParameters();
     }
 
     @Override
@@ -275,7 +272,7 @@ public class ServletRequestWrapper implements HttpServletRequest {
 
     @Override
     public String getServerName() {
-        return request.getHost();
+        return request.getServerName();
     }
 
     @Override
@@ -290,12 +287,12 @@ public class ServletRequestWrapper implements HttpServletRequest {
 
     @Override
     public String getRemoteAddr() {
-        return null;
+        return request.getRemoteAddr();
     }
 
     @Override
     public String getRemoteHost() {
-        return null;
+        return request.getRemoteHost();
     }
 
     @Override
@@ -336,17 +333,17 @@ public class ServletRequestWrapper implements HttpServletRequest {
 
     @Override
     public int getRemotePort() {
-        return 0;
+        return request.getRemotePort();
     }
 
     @Override
     public String getLocalName() {
-        return request.getHost();
+        return request.getServerName();
     }
 
     @Override
     public String getLocalAddr() {
-        return null;
+        return request.getLocalAddr();
     }
 
     @Override
