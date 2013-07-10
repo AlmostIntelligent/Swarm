@@ -40,22 +40,25 @@ public class ServletResponseWrapper implements HttpServletResponse {
 
     @Override
     public String encodeURL(String url) {
-        return null;
+        return url;
     }
 
     @Override
+
     public String encodeRedirectURL(String url) {
-        return null;
+        return url;
     }
 
     @Override
+    @Deprecated
     public String encodeUrl(String url) {
-        return null;
+        return "";
     }
 
     @Override
+    @Deprecated
     public String encodeRedirectUrl(String url) {
-        return null;
+        return "";
     }
 
     @Override

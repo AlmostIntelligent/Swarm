@@ -10,7 +10,9 @@
 
     <dependencies>
         <module name="javax.servlet.servlet-api" export="true"/>
+	<module name="javax.servlet.jsp.servletjsp-api" export="true"/>
         <module name="org.gethydrated.swarm.servlet" export="true"/>
-        <module name="org.apache.tomcat.tomcat-jasper" export="true"/>
+        <module name="org.glassfish.web.servletjsp" export="true"/>
+	<module name="org.glassfish.el" export="true"/>
     </dependencies>
 </module>

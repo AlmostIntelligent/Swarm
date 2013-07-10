@@ -2,6 +2,7 @@ package org.gethydrated.swarm.container.connector;
 
 import org.gethydrated.swarm.container.core.ApplicationContext;
 import org.gethydrated.swarm.server.SwarmHttpRequest;
+import org.gethydrated.swarm.sessions.SessionObject;
 
 import javax.servlet.*;
 import javax.servlet.http.*;
@@ -19,7 +20,7 @@ public class ServletRequestWrapper implements HttpServletRequest {
     private final ApplicationContext context;
 
     private final SwarmHttpRequest request;
-    private String servletPath;
+    private String servletPath = "";
 
     public ServletRequestWrapper(SwarmHttpRequest request, ApplicationContext context) {
         this.request = request;
@@ -130,19 +131,22 @@ public class ServletRequestWrapper implements HttpServletRequest {
     public String getServletPath() {
         if (servletPath.endsWith("/*")) {
             return servletPath.substring(0, servletPath.length()-2);
-        } else {
+        } else if (servletPath.endsWith("/")) {
             return servletPath.substring(0, servletPath.length()-1);
+        } else {
+            return servletPath;
         }
     }
 
     @Override
     public HttpSession getSession(boolean create) {
-        return null;
+        SessionObject sobject = context.getSessionObject(create);
+        return (sobject != null) ? new HttpSessionWrapper(sobject, context) : null;
     }
 
     @Override
     public HttpSession getSession() {
-        return null;
+        return getSession(true);
     }
 
     @Override

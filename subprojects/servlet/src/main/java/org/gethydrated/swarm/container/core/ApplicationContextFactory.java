@@ -44,6 +44,12 @@ public class ApplicationContextFactory {
         Module m = ml.loadModule(ModuleIdentifier.fromString("deploy."+ctx.getName()));
         ml.relinkModule(m);
         ctx.setRoot(handle);
+        ctx.setAttribute("org.apache.catalina.jsp_classpath", "D:\\git\\Swarm\\build\\swarm-1.0.0-SNAPSHOT\\modules\\system\\layers\\base\\javax\\servlet\\servlet-api\\main\\javax.servlet-api-3.1.0.jar;" +
+                "D:\\git\\Swarm\\build\\swarm-1.0.0-SNAPSHOT\\modules\\system\\layers\\base\\javax\\servlet\\jsp\\servletjsp-api\\main\\javax.servlet.jsp-api-2.3.1.jar;" +
+                "D:\\git\\Swarm\\build\\swarm-1.0.0-SNAPSHOT\\modules\\system\\layers\\base\\org\\glassfish\\web\\servletjsp\\main\\javax.servlet.jsp-2.3.2.jar;" +
+                "D:\\git\\Swarm\\build\\swarm-1.0.0-SNAPSHOT\\modules\\system\\layers\\base\\org\\glassfish\\el\\main\\javax.el-3.0.0.jar;" +
+                "D:\\git\\Swarm\\build\\swarm-1.0.0-SNAPSHOT\\webapps\\examples\\WEB-INF\\classes");
+
         return ctx;
     }
 

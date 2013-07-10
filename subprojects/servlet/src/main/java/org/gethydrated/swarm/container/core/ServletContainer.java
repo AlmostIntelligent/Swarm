@@ -3,6 +3,7 @@ package org.gethydrated.swarm.container.core;
 import org.gethydrated.swarm.container.Container;
 import org.gethydrated.swarm.container.LifecycleState;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.Servlet;
 import javax.servlet.ServletConfig;
@@ -30,31 +31,51 @@ public class ServletContainer extends AbstractContainer implements ServletConfig
     }
 
     public void invoke(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        if (servletInstance != null && getState() == LifecycleState.RUNNING) {
-            servletInstance.service(request, response);
+        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        try {
+            Thread.currentThread().setContextClassLoader(getServletContext().getClassLoader());
+            if (servletInstance != null && getState() == LifecycleState.RUNNING) {
+                servletInstance.service(request, response);
+            }
+        } finally {
+            Thread.currentThread().setContextClassLoader(cl);
         }
+
     }
 
     @Override
     public Logger getLogger() {
-        return null;
+        return LoggerFactory.getLogger(ServletContainer.class);
     }
 
     @Override
     public void doInit() {
-        if (servletInstance == null) {
-            try {
-                Class<?> clazz = getServletContext().getClassLoader().loadClass(servletClass);
-                servletInstance = (Servlet) clazz.newInstance();
-            } catch (Throwable t) {
-                t.printStackTrace();
+        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        try {
+            Thread.currentThread().setContextClassLoader(getServletContext().getClassLoader());
+
+            if (servletInstance == null) {
+                try {
+                    Class<?> clazz = getServletContext().getClassLoader().loadClass(servletClass);
+                    servletInstance = (Servlet) clazz.newInstance();
+                } catch (Throwable t) {
+                    t.printStackTrace();
+                }
             }
+        } finally {
+            Thread.currentThread().setContextClassLoader(cl);
         }
     }
 
     @Override
-    public void doStart() {
-
+    public void doStart() throws ServletException {
+        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        try {
+            Thread.currentThread().setContextClassLoader(getServletContext().getClassLoader());
+            servletInstance.init(this);
+        } finally {
+            Thread.currentThread().setContextClassLoader(cl);
+        }
     }
 
     @Override

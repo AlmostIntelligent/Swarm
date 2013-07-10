@@ -6,6 +6,8 @@ import org.gethydrated.swarm.container.connector.ServletResponseWrapper;
 import org.gethydrated.swarm.modules.DeploymentModuleLoader;
 import org.gethydrated.swarm.server.SwarmHttpRequest;
 import org.gethydrated.swarm.server.SwarmHttpResponse;
+import org.gethydrated.swarm.sessions.SessionObject;
+import org.gethydrated.swarm.sessions.SessionService;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
@@ -16,6 +18,8 @@ import org.slf4j.LoggerFactory;
 import javax.servlet.*;
 import javax.servlet.ServletRegistration.Dynamic;
 import javax.servlet.descriptor.JspConfigDescriptor;
+import javax.servlet.descriptor.JspPropertyGroupDescriptor;
+import javax.servlet.descriptor.TaglibDescriptor;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -47,10 +51,16 @@ public class ApplicationContext extends AbstractContainer implements ServletCont
 
     private final LinkedList<FilterMapping> filterMappings = new LinkedList();
 
+    private final Map<String, Object> attributes = new HashMap<>();
+
+    //will be done by hydra later on
+    private final SessionService sessionService = new SessionService();
+
     private ModuleLoader contextLoader;
     private Module module;
     private VirtualFile root;
     private Set<String> welcomeFiles = new HashSet<>();
+    private String sessionId;
 
     public ApplicationContext() {
         this("ROOT");
@@ -109,7 +119,7 @@ public class ApplicationContext extends AbstractContainer implements ServletCont
         String matchedPath = null;
         String matchedType = null;
         for (Entry<String, ServletContainer> e : servletMappings.entrySet()) {
-            Pattern p = Pattern.compile(e.getKey().replaceAll("\\*", ".*"));
+            Pattern p = Pattern.compile(e.getKey().replaceAll("\\.", "\\\\.").replaceAll("\\*", ".*"));
             if (p.matcher(request).matches()) {
                 if (e.getKey().endsWith("*")) {
                     if (matchedPath == null) {
@@ -178,7 +188,11 @@ public class ApplicationContext extends AbstractContainer implements ServletCont
         try {
             String matched = mapServlet(request.getRequestURI());
             ServletContainer container = servletMappings.get(matched);
-            ((ServletRequestWrapper)request).setServletPath(matched);
+            logger.info("matched {}", matched);
+            logger.info("matched container {}", container.getName());
+            if (!matched.startsWith("*.")) {
+                ((ServletRequestWrapper)request).setServletPath(matched);
+            }
 
             ApplicationFilterChain chain = new ApplicationFilterChain(container);
             chain.addFilters(mapFilters(request.getRequestURI(), matched));
@@ -189,6 +203,24 @@ public class ApplicationContext extends AbstractContainer implements ServletCont
             t.printStackTrace();
             response.sendError(404);
         }
+    }
+
+    public SessionObject getSessionObject(boolean create) {
+        if (sessionId != null) {
+            SessionObject s = sessionService.get(sessionId);
+            if (s == null && create) {
+                s = new SessionObject();
+                sessionId = s.getId();
+                sessionService.put(s);
+            }
+            return s;
+        } else if (create) {
+            SessionObject s = new SessionObject();
+            sessionId = s.getId();
+            sessionService.put(s);
+            return s;
+        }
+        return null;
     }
 
     /* ----- Container methods ---------------------*/
@@ -341,7 +373,7 @@ public class ApplicationContext extends AbstractContainer implements ServletCont
 
     @Override
     public String getRealPath(String path) {
-        return null;
+        return root.getPathName()+path;
     }
 
     @Override
@@ -366,22 +398,26 @@ public class ApplicationContext extends AbstractContainer implements ServletCont
 
     @Override
     public Object getAttribute(String name) {
-        return null;
+        return attributes.get(name);
     }
 
     @Override
     public Enumeration<String> getAttributeNames() {
-        return null;
+        return Collections.enumeration(attributes.keySet());
     }
 
     @Override
     public void setAttribute(String name, Object object) {
-
+        if (object == null) {
+            removeAttribute(name);
+        } else {
+            attributes.put(name, object);
+        }
     }
 
     @Override
     public void removeAttribute(String name) {
-
+        attributes.remove(name);
     }
 
     @Override
@@ -541,7 +577,53 @@ public class ApplicationContext extends AbstractContainer implements ServletCont
 
     @Override
     public JspConfigDescriptor getJspConfigDescriptor() {
-        return null;
+        System.out.print("here");
+        return new JspConfigDescriptor() {
+            @Override
+            public Collection<TaglibDescriptor> getTaglibs() {
+                Set<TaglibDescriptor> tags = new HashSet<>();
+                tags.add(new TaglibDescriptor() {
+                    @Override
+                    public String getTaglibURI() {
+                        return "http://tomcat.apache.org/debug-taglib";
+                    }
+
+                    @Override
+                    public String getTaglibLocation() {
+                        return "/WEB-INF/jsp/debug-taglib.tld";
+                    }
+                });
+                tags.add(new TaglibDescriptor() {
+                    @Override
+                    public String getTaglibURI() {
+                        return "http://tomcat.apache.org/example-taglib";
+                    }
+
+                    @Override
+                    public String getTaglibLocation() {
+                        return "/WEB-INF/jsp/example-taglib.tld";
+                    }
+                });
+                tags.add(new TaglibDescriptor() {
+                    @Override
+                    public String getTaglibURI() {
+                        return "http://tomcat.apache.org/jsp2-example-taglib";
+                    }
+
+                    @Override
+                    public String getTaglibLocation() {
+                        return "/WEB-INF/jsp2/jsp2-example-taglib.tld";
+                    }
+                });
+                return tags;
+            }
+
+            @Override
+            public Collection<JspPropertyGroupDescriptor> getJspPropertyGroups() {
+                Set<JspPropertyGroupDescriptor> set = new HashSet<>();
+                return set;
+            }
+        };
     }
 
     @Override

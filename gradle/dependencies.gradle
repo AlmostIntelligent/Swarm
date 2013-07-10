@@ -3,10 +3,12 @@ ext.libraries = [:]
 libraries.modules = 'org.jboss.modules:jboss-modules:1.2.2.Final@jar'
 
 libraries.slf4j_api = 'org.slf4j:slf4j-api:1.7.2@jar'
+libraries.slf4j_jul = 'org.slf4j:jul-to-slf4j:1.7.5@jar'
 libraries.logback_core = 'ch.qos.logback:logback-core:1.0.9@jar'
 libraries.logback_classic = dependencies.module('ch.qos.logback:logback-classic:1.0.9') {
     dependency libraries.logback_core
     dependency libraries.slf4j_api
+    dependency libraries.slf4j_jul
 }
 
 //libraries.hydra_api = 'org.gethydrated:hydra-api:1.0.0@jar'
@@ -23,6 +25,5 @@ libraries += [
     netty: 'io.netty:netty-all:4.0.0.CR7',
     javassist: 'org.javassist:javassist:3.18.0-GA',
     vfs: 'org.jboss:jboss-vfs:3.2.0.Beta1',
-    jasper: 'org.apache.tomcat:tomcat-jasper:7.0.41',
-    jasper_el: 'org.apache.tomcat:tomcat-jasper-el:7.0.41'
+    jasper: 'org.glassfish.web:javax.servlet.jsp:2.3.2',
 ]

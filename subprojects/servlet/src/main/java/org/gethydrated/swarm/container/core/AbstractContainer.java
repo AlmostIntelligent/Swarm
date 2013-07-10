@@ -60,6 +60,7 @@ public abstract class AbstractContainer implements Container {
                 setState(LifecycleState.READY);
             } catch (Throwable t) {
                 setState(LifecycleState.FAILED);
+                getLogger().warn("Error: {}", t);
             }
         } else {
             throw new IllegalStateException("Context already initialized.");
@@ -77,6 +78,7 @@ public abstract class AbstractContainer implements Container {
                 setState(LifecycleState.RUNNING);
             } catch (Throwable t) {
                 setState(LifecycleState.FAILED);
+                getLogger().warn("Error in Container: {}", getName(), t);
             }
         } else {
             throw new IllegalStateException("Context not initialized.");
@@ -92,6 +94,7 @@ public abstract class AbstractContainer implements Container {
                 setState(LifecycleState.STOPPED);
             } catch (Throwable t) {
                 setState(LifecycleState.FAILED);
+                getLogger().warn("Error: {}", t);
             }
         } else {
             throw new IllegalStateException("Context not running.");

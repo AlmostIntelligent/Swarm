@@ -5,6 +5,7 @@ import org.gethydrated.swarm.container.LifecycleListener;
 import org.gethydrated.swarm.container.LifecycleState;
 import org.jboss.modules.*;
 import org.jboss.modules.ModuleSpec.Builder;
+import org.jboss.modules.filter.PathFilters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,8 +55,8 @@ public class DeploymentModuleLoader extends ModuleLoader implements Lifecycle {
         Builder spec = ModuleSpec.build(identifier);
         for (ResourceLoader rl : resourceLoaders) {
             spec.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(rl));
-            spec.addDependency(DependencySpec.createLocalDependencySpec());
-            spec.addDependency(DependencySpec.createModuleDependencySpec(ModuleIdentifier.fromString("org.gethydrated.swarm.web")));
+            spec.addDependency(DependencySpec.createLocalDependencySpec(PathFilters.acceptAll(), PathFilters.acceptAll()));
+            spec.addDependency(DependencySpec.createModuleDependencySpec(PathFilters.acceptAll(), ModuleIdentifier.fromString("org.gethydrated.swarm.web"), false));
 
         }
         return spec.create();

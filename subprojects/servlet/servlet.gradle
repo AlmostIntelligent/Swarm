@@ -11,5 +11,4 @@ dependencies {
     provided libraries.vfs
     provided libraries.modules
     runtime libraries.jasper
-    runtime libraries.jasper_el
 }
