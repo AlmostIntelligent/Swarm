@@ -1,164 +1,274 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
-##############################################################################
-##
-##  hydra start up script for UN*X
-##
-##############################################################################
+SERVER_OPTS=""
+while [ "$#" -gt 0 ]
+do
+    case "$1" in
+      *)
+          SERVER_OPTS="$SERVER_OPTS \"$1\""
+          ;;
+    esac
+    shift
+done
 
-# Add default JVM options here. You can also use JAVA_OPTS and HYDRA_OPTS to pass JVM options to this script.
-DEFAULT_JVM_OPTS=""
+DIRNAME=`dirname "$0"`
+PROGNAME=`basename "$0"`
+GREP="grep"
 
-APP_NAME="hydra"
-APP_BASE_NAME=`basename "$0"`
-
-# Use the maximum available, or set MAX_FD != -1 to use that value.
+# Use the maximum available, or set MAX_FD != -1 to use that
 MAX_FD="maximum"
 
-warn ( ) {
-    echo "$*"
-}
-
-die ( ) {
-    echo
-    echo "$*"
-    echo
-    exit 1
-}
-
 # OS specific support (must be 'true' or 'false').
-cygwin=false
-msys=false
-darwin=false
+cygwin=false;
+darwin=false;
+linux=false;
+solaris=false;
+freebsd=false;
+
 case "`uname`" in
-  CYGWIN* )
-    cygwin=true
-    ;;
-  Darwin* )
-    darwin=true
-    ;;
-  MINGW* )
-    msys=true
-    ;;
+    CYGWIN*)
+        cygwin=true
+        ;;
+
+    Darwin*)
+        darwin=true
+        ;;
+    FreeBSD)
+        freebsd=true
+        ;;
+    Linux)
+        linux=true
+        ;;
+    SunOS*)
+        solaris=true
+        ;;
 esac
 
-# For Cygwin, ensure paths are in UNIX format before anything is touched.
+# For Cygwin, ensure paths are in UNIX format before anything is touched
 if $cygwin ; then
-    [ -n "$JAVA_HOME" ] && JAVA_HOME=`cygpath --unix "$JAVA_HOME"`
+    [ -n "$SWARM_HOME" ] &&
+        SWARM_HOME =`cygpath --unix "$SWARM_HOME"`
+    [ -n "$JAVA_HOME" ] &&
+        JAVA_HOME=`cygpath --unix "$JAVA_HOME"`
+    [ -n "$JAVAC_JAR" ] &&
+        JAVAC_JAR=`cygpath --unix "$JAVAC_JAR"`
 fi
 
-# Attempt to set APP_HOME
-# Resolve links: $0 may be a link
-PRG="$0"
-# Need this for relative symlinks.
-while [ -h "$PRG" ] ; do
-    ls=`ls -ld "$PRG"`
-    link=`expr "$ls" : '.*-> \(.*\)$'`
-    if expr "$link" : '/.*' > /dev/null; then
-        PRG="$link"
-    else
-        PRG=`dirname "$PRG"`"/$link"
-    fi
-done
-SAVED="`pwd`"
-cd "`dirname \"$PRG\"`/.." >&-
-APP_HOME="`pwd -P`"
-cd "$SAVED" >&-
-
-CLASSPATH=$APP_HOME/lib/guava-13.0.1.jar:$APP_HOME/lib/hydra-actors-1.0.0.jar:$APP_HOME/lib/hydra-actors-1.1.0-SNAPSHOT.jar:$APP_HOME/lib/hydra-api-1.0.0.jar:$APP_HOME/lib/hydra-api-1.1.0-SNAPSHOT.jar:$APP_HOME/lib/hydra-config-1.0.0.jar:$APP_HOME/lib/hydra-config-1.1.0-SNAPSHOT.jar:$APP_HOME/lib/hydra-core-1.0.0.jar:$APP_HOME/lib/hydra-core-1.1.0-SNAPSHOT.jar:$APP_HOME/lib/hydra-launcher-1.0.0.jar:$APP_HOME/lib/hydra-launcher-1.1.0-SNAPSHOT.jar:$APP_HOME/lib/hydra-util-1.0.0.jar:$APP_HOME/lib/hydra-util-1.1.0-SNAPSHOT.jar:$APP_HOME/lib/jackson-annotations-2.1.4.jar:$APP_HOME/lib/jackson-core-2.1.4.jar:$APP_HOME/lib/jackson-databind-2.1.4.jar:$APP_HOME/lib/jackson-module-jaxb-annotations-2.1.4.jar:$APP_HOME/lib/javax.servlet-3.0.0.v201112011016.jar:$APP_HOME/lib/jetty-continuation-8.1.8.v20121106.jar:$APP_HOME/lib/jetty-http-8.1.8.v20121106.jar:$APP_HOME/lib/jetty-io-8.1.8.v20121106.jar:$APP_HOME/lib/jetty-server-8.1.8.v20121106.jar:$APP_HOME/lib/jetty-util-8.1.8.v20121106.jar:$APP_HOME/lib/logback-classic-1.0.7.jar:$APP_HOME/lib/logback-core-1.0.7.jar:$APP_HOME/lib/netty-all-4.0.0.CR1.jar:$APP_HOME/lib/slf4j-api-1.6.6.jar
-
-# Determine the Java command to use to start the JVM.
-if [ -n "$JAVA_HOME" ] ; then
-    if [ -x "$JAVA_HOME/jre/sh/java" ] ; then
-        # IBM's JDK on AIX uses strange locations for the executables
-        JAVACMD="$JAVA_HOME/jre/sh/java"
-    else
-        JAVACMD="$JAVA_HOME/bin/java"
-    fi
-    if [ ! -x "$JAVACMD" ] ; then
-        die "ERROR: JAVA_HOME is set to an invalid directory: $JAVA_HOME
-
-Please set the JAVA_HOME variable in your environment to match the
-location of your Java installation."
-    fi
+# Setup SWARM_HOME
+RESOLVED_SWARM_HOME=`cd "$DIRNAME/.."; pwd`
+if [ "x$SWARM_HOME" = "x" ]; then
+    # get the full path (without any relative bits)
+    SWARM_HOME=$RESOLVED_SWARM_HOME
 else
-    JAVACMD="java"
-    which java >/dev/null 2>&1 || die "ERROR: JAVA_HOME is not set and no 'java' command could be found in your PATH.
-
-Please set the JAVA_HOME variable in your environment to match the
-location of your Java installation."
+ SANITIZED_SWARM_HOME =`cd "$SWARM_HOME"; pwd`
+ if [ "$RESOLVED_SWARM_HOME" != "$SANITIZED_SWARM_HOME" ]; then
+   echo ""
+   echo "   WARNING:  SWARM_HOME may be pointing to a different installation - unpredictable results may occur."
+   echo ""
+   echo "             SWARM_HOME: $SWARM_HOME"
+   echo ""
+   sleep 2s
+ fi
 fi
+export $SWARM_HOME
 
-# Increase the maximum file descriptors if we can.
-if [ "$cygwin" = "false" -a "$darwin" = "false" ] ; then
-    MAX_FD_LIMIT=`ulimit -H -n`
-    if [ $? -eq 0 ] ; then
-        if [ "$MAX_FD" = "maximum" -o "$MAX_FD" = "max" ] ; then
-            MAX_FD="$MAX_FD_LIMIT"
-        fi
-        ulimit -n $MAX_FD
-        if [ $? -ne 0 ] ; then
-            warn "Could not set maximum file descriptor limit: $MAX_FD"
-        fi
+# Setup the JVM
+if [ "x$JAVA" = "x" ]; then
+    if [ "x$JAVA_HOME" != "x" ]; then
+        JAVA="$JAVA_HOME/bin/java"
     else
-        warn "Could not query maximum file descriptor limit: $MAX_FD_LIMIT"
+        JAVA="java"
     fi
 fi
 
-# For Darwin, add options to specify how the application appears in the dock
-if $darwin; then
-    GRADLE_OPTS="$GRADLE_OPTS \"-Xdock:name=$APP_NAME\" \"-Xdock:icon=$APP_HOME/media/gradle.icns\""
+if [ "$PRESERVE_JAVA_OPTS" != "true" ]; then
+    # Check for -d32/-d64 in JAVA_OPTS
+    JVM_D64_OPTION=`echo $JAVA_OPTS | $GREP "\-d64"`
+    JVM_D32_OPTION=`echo $JAVA_OPTS | $GREP "\-d32"`
+
+    # Check If server or client is specified
+    SERVER_SET=`echo $JAVA_OPTS | $GREP "\-server"`
+    CLIENT_SET=`echo $JAVA_OPTS | $GREP "\-client"`
+
+    if [ "x$JVM_D32_OPTION" != "x" ]; then
+        JVM_OPTVERSION="-d32"
+    elif [ "x$JVM_D64_OPTION" != "x" ]; then
+        JVM_OPTVERSION="-d64"
+    elif $darwin && [ "x$SERVER_SET" = "x" ]; then
+        # Use 32-bit on Mac, unless server has been specified or the user opts are incompatible
+        "$JAVA" -d32 $JAVA_OPTS -version > /dev/null 2>&1 && PREPEND_JAVA_OPTS="-d32" && JVM_OPTVERSION="-d32"
+    fi
+
+    CLIENT_VM=false
+    if [ "x$CLIENT_SET" != "x" ]; then
+        CLIENT_VM=true
+    elif [ "x$SERVER_SET" = "x" ]; then
+        if $darwin && [ "$JVM_OPTVERSION" = "-d32" ]; then
+            # Prefer client for Macs, since they are primarily used for development
+            CLIENT_VM=true
+            PREPEND_JAVA_OPTS="$PREPEND_JAVA_OPTS -client"
+        else
+            PREPEND_JAVA_OPTS="$PREPEND_JAVA_OPTS -server"
+        fi
+    fi
+
+    if [ $CLIENT_VM = false ]; then
+        NO_COMPRESSED_OOPS=`echo $JAVA_OPTS | $GREP "\-XX:\-UseCompressedOops"`
+        if [ "x$NO_COMPRESSED_OOPS" = "x" ]; then
+            "$JAVA" $JVM_OPTVERSION -server -XX:+UseCompressedOops -version >/dev/null 2>&1 && PREPEND_JAVA_OPTS="$PREPEND_JAVA_OPTS -XX:+UseCompressedOops"
+        fi
+    fi
+
+    JAVA_OPTS="$PREPEND_JAVA_OPTS $JAVA_OPTS"
+fi
+
+if [ "x$SWARM_MODULEPATH" = "x" ]; then
+    SWARM_MODULEPATH="$SWARM_HOME/modules"
+fi
+
+if $linux || $solaris; then
+    # consolidate the server and command line opts
+    CONSOLIDATED_OPTS="$JAVA_OPTS $SERVER_OPTS"
+    # process the standalone options
+    for var in $CONSOLIDATED_OPTS
+    do
+       # Remove quotes
+       p=`echo $var | tr -d '"'`
+       case $p in
+         -Dswarm.server.base.dir=*)
+              SWARM_BASE_DIR=`readlink -m ${p#*=}`
+              ;;
+         -Dswarm.server.log.dir=*)
+              SWARM_LOG_DIR=`readlink -m ${p#*=}`
+              ;;
+         -Dswarm.server.conf.dir=*)
+              SWARM_CONFIG_DIR=`readlink -m ${p#*=}`
+              ;;
+       esac
+    done
+fi
+
+# No readlink -m on BSD
+if $darwin || $freebsd; then
+    # consolidate the server and command line opts
+    CONSOLIDATED_OPTS="$JAVA_OPTS $SERVER_OPTS"
+    # process the standalone options
+    for var in $CONSOLIDATED_OPTS
+    do
+       # Remove quotes
+       p=`echo $var | tr -d '"'`
+       case $p in
+         -Dswarm.server.base.dir=*)
+              SWARM_BASE_DIR=`cd ${p#*=} ; pwd -P`
+              ;;
+         -Dswarm.server.log.dir=*)
+              SWARM_LOG_DIR=`cd ${p#*=} ; pwd -P`
+              ;;
+         -Dswarm.server.conf.dir=*)
+              SWARM_CONFIG_DIR=`cd ${p#*=} ; pwd -P`
+              ;;
+       esac
+    done
+fi
+
+# determine the default base dir, if not set
+if [ "x$SWARM_BASE_DIR" = "x" ]; then
+   SWARM_BASE_DIR="$SWARM_HOME/deploy"
+fi
+# determine the default log dir, if not set
+if [ "x$SWARM_LOG_DIR" = "x" ]; then
+   SWARM_LOG_DIR="$SWARM_HOME/log"
+fi
+# determine the default configuration dir, if not set
+if [ "x$SWARM_CONFIG_DIR" = "x" ]; then
+   SWARM_CONFIG_DIR="$SWARM_HOME/conf"
 fi
 
 # For Cygwin, switch paths to Windows format before running java
-if $cygwin ; then
-    APP_HOME=`cygpath --path --mixed "$APP_HOME"`
-    CLASSPATH=`cygpath --path --mixed "$CLASSPATH"`
-
-    # We build the pattern for arguments to be converted via cygpath
-    ROOTDIRSRAW=`find -L / -maxdepth 1 -mindepth 1 -type d 2>/dev/null`
-    SEP=""
-    for dir in $ROOTDIRSRAW ; do
-        ROOTDIRS="$ROOTDIRS$SEP$dir"
-        SEP="|"
-    done
-    OURCYGPATTERN="(^($ROOTDIRS))"
-    # Add a user-defined pattern to the cygpath arguments
-    if [ "$GRADLE_CYGPATTERN" != "" ] ; then
-        OURCYGPATTERN="$OURCYGPATTERN|($GRADLE_CYGPATTERN)"
-    fi
-    # Now convert the arguments - kludge to limit ourselves to /bin/sh
-    i=0
-    for arg in "$@" ; do
-        CHECK=`echo "$arg"|egrep -c "$OURCYGPATTERN" -`
-        CHECK2=`echo "$arg"|egrep -c "^-"`                                 ### Determine if an option
-
-        if [ $CHECK -ne 0 ] && [ $CHECK2 -eq 0 ] ; then                    ### Added a condition
-            eval `echo args$i`=`cygpath --path --ignore --mixed "$arg"`
-        else
-            eval `echo args$i`="\"$arg\""
-        fi
-        i=$((i+1))
-    done
-    case $i in
-        (0) set -- ;;
-        (1) set -- "$args0" ;;
-        (2) set -- "$args0" "$args1" ;;
-        (3) set -- "$args0" "$args1" "$args2" ;;
-        (4) set -- "$args0" "$args1" "$args2" "$args3" ;;
-        (5) set -- "$args0" "$args1" "$args2" "$args3" "$args4" ;;
-        (6) set -- "$args0" "$args1" "$args2" "$args3" "$args4" "$args5" ;;
-        (7) set -- "$args0" "$args1" "$args2" "$args3" "$args4" "$args5" "$args6" ;;
-        (8) set -- "$args0" "$args1" "$args2" "$args3" "$args4" "$args5" "$args6" "$args7" ;;
-        (9) set -- "$args0" "$args1" "$args2" "$args3" "$args4" "$args5" "$args6" "$args7" "$args8" ;;
-    esac
+if $cygwin; then
+    SWARM_HOME=`cygpath --path --windows "$SWARM_HOME"`
+    JAVA_HOME=`cygpath --path --windows "$JAVA_HOME"`
+    SWARM_MODULEPATH=`cygpath --path --windows "$SWARM_MODULEPATH"`
+    SWARM_BASE_DIR=`cygpath --path --windows "$SWARM_BASE_DIR"`
+    SWARM_LOG_DIR=`cygpath --path --windows "$SWARM_LOG_DIR"`
+    SWARM_CONFIG_DIR=`cygpath --path --windows "$SWARM_CONFIG_DIR"`
 fi
 
-# Split up the JVM_OPTS And HYDRA_OPTS values into an array, following the shell quoting and substitution rules
-function splitJvmOpts() {
-    JVM_OPTS=("$@")
-}
-eval splitJvmOpts $DEFAULT_JVM_OPTS $JAVA_OPTS $HYDRA_OPTS
+# Display our environment
+echo "========================================================================="
+echo ""
+echo "  Swarm Bootstrap Environment"
+echo ""
+echo "  SWARM_HOME: $SWARM_HOME"
+echo ""
+echo "  JAVA: $JAVA"
+echo ""
+echo "  JAVA_OPTS: $JAVA_OPTS"
+echo ""
+echo "========================================================================="
+echo ""
 
-
-exec "$JAVACMD" "${JVM_OPTS[@]}" -classpath "$CLASSPATH" org.gethydrated.hydra.launcher.Launcher "$@"
+while true; do
+   if [ "x$LAUNCH_SWARM_IN_BACKGROUND" = "x" ]; then
+      # Execute the JVM in the foreground
+      eval \"$JAVA\" $JAVA_OPTS \
+         \"-Dswarm.home.dir=$SWARM_HOME\" \
+	 \"-Dswarm.log.dir=$SWARM_LOG_DIR\" \
+	 \"-Dswarm.conf.dir=$SWARM_CONFIG_DIR\" \
+         \"-Djava.util.logging.config.file=file:$SWARM_CONFIG_DIR/logging.properties\" \
+         -jar \"$SWARM_HOME/jboss-modules.jar\" \
+         -mp \"${SWARM_MODULEPATH}\" \
+         org.gethydrated.swarm.launcher \
+         "$SERVER_OPTS"
+      JBOSS_STATUS=$?
+   else
+      # Execute the JVM in the background
+      eval \"$JAVA\" $JAVA_OPTS \
+         \"-Dswarm.home.dir=$SWARM_HOME\" \
+	 \"-Dswarm.log.dir=$SWARM_LOG_DIR\" \
+	 \"-Dswarm.conf.dir=$SWARM_CONFIG_DIR\" \
+         \"-Djava.util.logging.config.file=file:$SWARM_CONFIG_DIR/logging.properties\" \
+         -jar \"$SWARM_HOME/jboss-modules.jar\" \
+         -mp \"${SWARM_MODULEPATH}\" \
+         org.gethydrated.swarm.launcher \
+         "$SERVER_OPTS" "&"
+      SWARM_PID=$!
+      # Trap common signals and relay them to the jboss process
+      trap "kill -HUP  $SWARM_PID" HUP
+      trap "kill -TERM $SWARM_PID" INT
+      trap "kill -QUIT $SWARM_PID" QUIT
+      trap "kill -PIPE $SWARM_PID" PIPE
+      trap "kill -TERM $SWARM_PID" TERM
+      if [ "x$SWARM_PIDFILE" != "x" ]; then
+        echo $SWARM_PID > $SWARM_PIDFILE
+      fi
+      # Wait until the background process exits
+      WAIT_STATUS=128
+      while [ "$WAIT_STATUS" -ge 128 ]; do
+         wait $SWARM_PID 2>/dev/null
+         WAIT_STATUS=$?
+         if [ "$WAIT_STATUS" -gt 128 ]; then
+            SIGNAL=`expr $WAIT_STATUS - 128`
+            SIGNAL_NAME=`kill -l $SIGNAL`
+            echo "*** Swarm process ($SWARM_PID) received $SIGNAL_NAME signal ***" >&2
+         fi
+      done
+      if [ "$WAIT_STATUS" -lt 127 ]; then
+         SWARM_STATUS=$WAIT_STATUS
+      else
+         SWARM_STATUS=0
+      fi
+      if [ "$SWARM_STATUS" -ne 10 ]; then
+            # Wait for a complete shudown
+            wait $SWARM_PID 2>/dev/null
+      fi
+      if [ "x$SWARM_PIDFILE" != "x" ]; then
+            grep "$SWARM_PID" $SWARM_PIDFILE && rm $SWARM_PIDFILE
+      fi
+   fi
+   if [ "$SWARM_STATUS" -eq 1 ]; then
+      echo "Restarting Swarm..."
+   else
+      exit $SWARM_STATUS
+   fi
+done

@@ -43,7 +43,11 @@ public class VFSResourceLoader extends AbstractResourceLoader {
 
     @Override
     public ClassSpec getClassSpec(String fileName) throws IOException {
+        System.out.println(fileName);
+        System.out.println(root.getPathName());
         final VirtualFile file = root.getChild(fileName);
+        System.out.println(file.getPathName());
+        System.out.println(file.exists());
         if (!file.exists()) {
             return null;
         }
