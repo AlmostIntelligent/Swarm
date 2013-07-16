@@ -4,10 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.Map.Entry;
 
 /**
  *
@@ -53,7 +51,7 @@ public class SwarmHttpRequest extends BaseHttpMessage implements HttpRequest, Se
         return Collections.unmodifiableMap(parameters);
     }
 
-    public void addParameter(String name, String value) {
+    public SwarmHttpRequest addParameter(String name, String value) {
         if (!parameters.containsKey(name)) {
             String[] arr = new String[1];
             arr[0] = value;
@@ -64,5 +62,15 @@ public class SwarmHttpRequest extends BaseHttpMessage implements HttpRequest, Se
             arr[arr.length-1] = value;
             parameters.put(name, arr);
         }
+        return this;
+    }
+
+    public SwarmHttpRequest addParameters(Map<String, List<String>> parameters) {
+        for (Entry<String, List<String>> e : parameters.entrySet()) {
+            for (String s : e.getValue()) {
+                addParameter(e.getKey(), s);
+            }
+        }
+        return this;
     }
 }

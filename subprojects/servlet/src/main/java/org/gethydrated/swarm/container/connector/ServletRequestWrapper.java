@@ -27,6 +27,10 @@ public class ServletRequestWrapper implements HttpServletRequest {
         this.context = context;
     }
 
+    public void setServletPath(String servletPath) {
+        this.servletPath = servletPath;
+    }
+
     @Override
     public String getAuthType() {
         return null;
@@ -133,6 +137,8 @@ public class ServletRequestWrapper implements HttpServletRequest {
             return servletPath.substring(0, servletPath.length()-2);
         } else if (servletPath.endsWith("/")) {
             return servletPath.substring(0, servletPath.length()-1);
+        } else if (servletPath.startsWith("*.")) {
+            return request.getUri();
         } else {
             return servletPath;
         }
@@ -170,6 +176,7 @@ public class ServletRequestWrapper implements HttpServletRequest {
     }
 
     @Override
+    @Deprecated
     public boolean isRequestedSessionIdFromUrl() {
         return false;
     }
@@ -388,9 +395,5 @@ public class ServletRequestWrapper implements HttpServletRequest {
     @Override
     public DispatcherType getDispatcherType() {
         return null;
-    }
-
-    public void setServletPath(String servletPath) {
-        this.servletPath = servletPath;
     }
 }

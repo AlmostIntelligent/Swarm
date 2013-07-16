@@ -1,7 +1,3 @@
-configurations.all {
-	artifacts.clear()
-}
-
 dependencies {
 	compile 'javax.servlet:javax.servlet-api:3.1.0'
 	compile 'javax.servlet.jsp:javax.servlet.jsp-api:2.3.1'
@@ -20,5 +16,3 @@ dependencies {
 	compile 'javax.inject:javax.inject:1'
 	compile 'org.eclipse.persistence:javax.persistence:2.1.0'
 }
-
-tasks.remove(jar)

@@ -27,9 +27,11 @@ public class SwarmAdapterCodec extends MessageToMessageCodec<FullHttpRequest, Ht
 
     @Override
     protected void decode(ChannelHandlerContext ctx, FullHttpRequest msg, MessageList<Object> out) throws Exception {
+        QueryStringDecoder decoder = new QueryStringDecoder(msg.getUri());
         SwarmHttpRequest request = new SwarmHttpRequest();
         request.setMethod(msg.getMethod().name())
-                .setUri(msg.getUri())
+                .setUri(decoder.path())
+                .addParameters(decoder.parameters())
                 .setServerName(HttpHeaders.getHost(msg))
                 .setRemoteAddr((InetSocketAddress) ctx.channel().remoteAddress())
                 .setLocalAddr(((InetSocketAddress) ctx.channel().localAddress()))

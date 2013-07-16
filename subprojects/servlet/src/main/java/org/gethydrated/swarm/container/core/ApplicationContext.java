@@ -190,9 +190,7 @@ public class ApplicationContext extends AbstractContainer implements ServletCont
             ServletContainer container = servletMappings.get(matched);
             logger.info("matched {}", matched);
             logger.info("matched container {}", container.getName());
-            if (!matched.startsWith("*.")) {
-                ((ServletRequestWrapper)request).setServletPath(matched);
-            }
+            ((ServletRequestWrapper)request).setServletPath(matched);
 
             ApplicationFilterChain chain = new ApplicationFilterChain(container);
             chain.addFilters(mapFilters(request.getRequestURI(), matched));
@@ -577,7 +575,6 @@ public class ApplicationContext extends AbstractContainer implements ServletCont
 
     @Override
     public JspConfigDescriptor getJspConfigDescriptor() {
-        System.out.print("here");
         return new JspConfigDescriptor() {
             @Override
             public Collection<TaglibDescriptor> getTaglibs() {

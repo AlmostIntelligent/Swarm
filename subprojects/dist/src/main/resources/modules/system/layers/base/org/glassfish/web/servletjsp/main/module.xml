@@ -14,5 +14,6 @@
 		<module name="javax.servlet.jsp.servletjsp-api"/>
 		<module name="javax.api"/>
 		<module name="org.glassfish.el"/>
+		<module name="org.gethydrated.swarm.spec"/>
     </dependencies>
 </module>
