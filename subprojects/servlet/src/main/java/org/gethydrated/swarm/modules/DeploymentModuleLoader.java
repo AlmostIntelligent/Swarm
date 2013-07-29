@@ -55,10 +55,9 @@ public class DeploymentModuleLoader extends ModuleLoader implements Lifecycle {
         Builder spec = ModuleSpec.build(identifier);
         for (ResourceLoader rl : resourceLoaders) {
             spec.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(rl));
-            spec.addDependency(DependencySpec.createLocalDependencySpec(PathFilters.acceptAll(), PathFilters.acceptAll()));
-            spec.addDependency(DependencySpec.createModuleDependencySpec(PathFilters.acceptAll(), ModuleIdentifier.fromString("org.gethydrated.swarm.web"), false));
-
         }
+        spec.addDependency(DependencySpec.createLocalDependencySpec(PathFilters.acceptAll(), PathFilters.acceptAll()));
+        spec.addDependency(DependencySpec.createModuleDependencySpec(PathFilters.acceptAll(), ModuleIdentifier.fromString("org.gethydrated.swarm.web"), false));
         return spec.create();
     }
 

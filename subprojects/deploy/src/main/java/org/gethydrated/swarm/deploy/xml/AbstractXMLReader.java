@@ -21,17 +21,13 @@ public abstract class AbstractXMLReader<T> implements XMLReader<T> {
             .getLogger(AbstractXMLReader.class);
 
     @Override
-    public final T parse(final InputStream inputStream) {
-        try {
-            final Document doc = docLoader.loadDocument(inputStream);
-            final DocumentRunner runner = new DocumentRunner(doc);
-            final XMLParser<T> parser = getParser();
-            runner.traverse(parser);
-            return parser.getResult();
-        } catch (final Exception e) {
-            logger.error("An error occured while parsing: {}", e);
-        }
-        return null;
+    public final T parse(final InputStream inputStream) throws Exception {
+
+        final Document doc = docLoader.loadDocument(inputStream);
+        final DocumentRunner runner = new DocumentRunner(doc);
+        final XMLParser<T> parser = getParser();
+        runner.traverse(parser);
+        return parser.getResult();
     }
 
     /**

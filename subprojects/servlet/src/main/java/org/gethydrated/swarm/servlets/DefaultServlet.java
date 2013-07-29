@@ -23,6 +23,9 @@ public class DefaultServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
+        logger.info("{}", req.getContextPath());
+        logger.info("{}", req.getRequestURI());
+        logger.info("{}", req.getPathInfo());
         if (req.getPathInfo() != null) {
             logger.info(req.getRequestURI());
 

@@ -3,16 +3,19 @@ package org.gethydrated.swarm.server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
 import java.io.Serializable;
 
 /**
  *
  */
+@XmlAccessorType(XmlAccessType.FIELD)
 public class SwarmHttpResponse extends BaseHttpMessage implements HttpResponse, Serializable {
 
     private final transient Logger logger = LoggerFactory.getLogger(SwarmHttpResponse.class);
     private boolean keepAlive = false;
-    private StringBuffer content;
+    private String content;
     private String contentType = "";
     private int status;
 
@@ -27,11 +30,19 @@ public class SwarmHttpResponse extends BaseHttpMessage implements HttpResponse, 
     }
 
     @Override
-    public StringBuffer getContentBuffer() {
+    public String getContent() {
         if (content == null) {
-            content = new StringBuffer();
+            content = "";
         }
         return content;
+    }
+
+    public void setContent(String c) {
+        content = c;
+    }
+
+    public void appendContent(String c) {
+        content = content + c;
     }
 
     @Override
@@ -55,5 +66,15 @@ public class SwarmHttpResponse extends BaseHttpMessage implements HttpResponse, 
 
     public int getStatus() {
         return status;
+    }
+
+    @Override
+    public String toString() {
+        return "SwarmHttpResponse{" +
+                "keepAlive=" + keepAlive +
+                ", content=" + content +
+                ", contentType='" + contentType + '\'' +
+                ", status=" + status +
+                '}';
     }
 }

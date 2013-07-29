@@ -15,6 +15,11 @@
 		<module name="org.gethydrated.swarm.servlet"/>
 		<module name="org.gethydrated.swarm.server"/>
 		<module name="org.gethydrated.swarm.deploy"/>
+        <module name="org.gethydrated.hydra.core"/>
+        <module name="org.gethydrated.hydra.api"/>
+        <module name="org.gethydrated.hydra.actors"/>
+        <module name="org.gethydrated.hydra.config"/>
+        <module name="org.gethydrated.hydra.util"/>
 		<module name="org.jboss.modules"/>
 		<module name="org.jboss.jboss-vfs"/>
 		<module name="org.slf4j.slf4j-api"/>

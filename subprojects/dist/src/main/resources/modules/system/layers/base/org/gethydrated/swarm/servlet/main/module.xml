@@ -12,6 +12,7 @@
     <dependencies>
 		<module name="org.gethydrated.swarm.server"/>
         <module name="org.gethydrated.swarm.deploy"/>
+        <module name="org.gethydrated.hydra.api"/>
 		<module name="io.netty.netty-all" export="true"/>
 		<module name="javax.servlet.servlet-api"/>
 		<module name="org.slf4j.slf4j-api"/>

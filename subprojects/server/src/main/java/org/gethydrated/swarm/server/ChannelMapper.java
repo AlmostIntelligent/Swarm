@@ -40,6 +40,9 @@ public class ChannelMapper {
 
     public void destroy() {
         timer.stop();
+        for (ChannelHandlerContext ctx : mappings.values()) {
+            ctx.close();
+        }
     }
 
     private class ChannelTimeout implements TimerTask {
@@ -54,14 +57,14 @@ public class ChannelMapper {
         public void run(Timeout timeout) throws Exception {
             ChannelHandlerContext ctx = mappings.remove(id);
             if (ctx != null) {
-                LoggerFactory.getLogger("test").info("channel timeout");
+                LoggerFactory.getLogger(ChannelTimeout.class).info("channel timeout: id '{}'", id);
                 if(ctx.channel().isActive()) {
                     StringBuffer buf = new StringBuffer();
                     buf.append("Request timed out.");
                     FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1,
                             HttpResponseStatus.GATEWAY_TIMEOUT, Unpooled.copiedBuffer(buf.toString(), CharsetUtil.UTF_8));
 
-                    ctx.write(response).syncUninterruptibly();
+                    ctx.writeAndFlush(response).syncUninterruptibly();
                 }
                 ctx.close();
             }

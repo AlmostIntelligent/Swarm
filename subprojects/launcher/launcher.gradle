@@ -9,6 +9,15 @@ dependencies {
     provided libraries.vfs
     provided libraries.modules
     compile libraries.javassist
+    compile libraries.hydra_core
+    compile libraries.hydra_api
+    compile libraries.hydra_actors
+    compile libraries.hydra_config
+    compile libraries.hydra_utils
+    compile libraries.jackson_core
+    compile libraries.jackson_databind
+    compile libraries.jackson_jaxb
+    compile libraries.jackson_annotations
 }
 
 jar {

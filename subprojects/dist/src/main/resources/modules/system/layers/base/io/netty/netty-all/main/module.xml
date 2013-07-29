@@ -8,7 +8,7 @@
     <main-class name="org.gethydrated.swarm.launcher.Main"/>
 
     <resources>
-        <resource-root path="netty-all-4.0.0.CR7.jar"/>
+        <resource-root path="netty-all-4.0.1.Final.jar"/>
     </resources>
 
     <dependencies>

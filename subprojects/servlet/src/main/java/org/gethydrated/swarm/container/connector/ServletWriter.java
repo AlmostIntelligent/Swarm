@@ -12,6 +12,8 @@ public class ServletWriter extends Writer {
 
     private final SwarmHttpResponse response;
 
+    private StringBuffer buf = new StringBuffer();
+
     public ServletWriter(SwarmHttpResponse response) {
         this.response = response;
     }
@@ -19,16 +21,17 @@ public class ServletWriter extends Writer {
 
     @Override
     public void write(char[] cbuf, int off, int len) throws IOException {
-        response.getContentBuffer().append(cbuf, off, len);
+        buf.append(cbuf, off, len);
     }
 
     @Override
     public void flush() throws IOException {
-        System.out.println("flushed");
+        response.appendContent(buf.toString());
+        buf = new StringBuffer();
     }
 
     @Override
     public void close() throws IOException {
-        System.out.println("closed");
+        flush();
     }
 }

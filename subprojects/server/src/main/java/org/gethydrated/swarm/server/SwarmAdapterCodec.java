@@ -2,7 +2,6 @@ package org.gethydrated.swarm.server;
 
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.MessageList;
 import io.netty.handler.codec.MessageToMessageCodec;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpHeaders.Values;
@@ -14,6 +13,7 @@ import io.netty.util.CharsetUtil;
 
 import java.net.InetSocketAddress;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Set;
 
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
@@ -26,15 +26,15 @@ public class SwarmAdapterCodec extends MessageToMessageCodec<FullHttpRequest, Ht
     private static final HttpDataFactory factory = new DefaultHttpDataFactory(false);
 
     @Override
-    protected void decode(ChannelHandlerContext ctx, FullHttpRequest msg, MessageList<Object> out) throws Exception {
+    protected void decode(ChannelHandlerContext ctx, FullHttpRequest msg, List<Object> out) throws Exception {
         QueryStringDecoder decoder = new QueryStringDecoder(msg.getUri());
         SwarmHttpRequest request = new SwarmHttpRequest();
         request.setMethod(msg.getMethod().name())
                 .setUri(decoder.path())
                 .addParameters(decoder.parameters())
                 .setServerName(HttpHeaders.getHost(msg))
-                .setRemoteAddr((InetSocketAddress) ctx.channel().remoteAddress())
-                .setLocalAddr(((InetSocketAddress) ctx.channel().localAddress()))
+                .setRemoteInetAddr((InetSocketAddress) ctx.channel().remoteAddress())
+                .setLocalInetAddr(((InetSocketAddress) ctx.channel().localAddress()))
                 .setHttpVersion(msg.getProtocolVersion().text())
                 .addHeaders(msg.headers().entries());
         try {
@@ -62,9 +62,9 @@ public class SwarmAdapterCodec extends MessageToMessageCodec<FullHttpRequest, Ht
     }
 
     @Override
-    protected void encode(ChannelHandlerContext ctx, HttpResponse msg, MessageList<Object> out) throws Exception {
+    protected void encode(ChannelHandlerContext ctx, HttpResponse msg, List<Object> out) throws Exception {
         FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.valueOf(msg.getHttpVersion()),
-                HttpResponseStatus.valueOf(msg.getStatus()), Unpooled.copiedBuffer(msg.getContentBuffer(), CharsetUtil.ISO_8859_1));
+                HttpResponseStatus.valueOf(msg.getStatus()), Unpooled.copiedBuffer(msg.getContent(), CharsetUtil.ISO_8859_1));
 
         Enumeration<String> headers = msg.getHeaderNames();
         while (headers.hasMoreElements()) {

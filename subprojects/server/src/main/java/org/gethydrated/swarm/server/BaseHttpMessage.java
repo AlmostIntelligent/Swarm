@@ -1,6 +1,9 @@
 package org.gethydrated.swarm.server;
 
 import javax.servlet.http.Cookie;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlTransient;
 import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.Map.Entry;
@@ -8,13 +11,18 @@ import java.util.Map.Entry;
 /**
  *
  */
+@XmlAccessorType(XmlAccessType.FIELD)
 public class BaseHttpMessage implements HttpMessage {
     private String httpVersion;
     private long requestId;
     private Set<Pair> headers = new HashSet<>();
     private String serverName;
-    private InetSocketAddress localAddr;
-    private InetSocketAddress remoteAddr;
+    private String localAddr;
+    private String localHost;
+    private int localPort;
+    private String remoteAddr;
+    private String remoteHost;
+    private int remotePort;
     private Set<Cookie> cookies = new HashSet<>();
 
     @Override
@@ -65,6 +73,7 @@ public class BaseHttpMessage implements HttpMessage {
     }
 
     @Override
+    @XmlTransient
     public Enumeration<String> getHeaderNames() {
         Set<String> results = new HashSet<>();
         for (Pair p : headers) {
@@ -88,36 +97,40 @@ public class BaseHttpMessage implements HttpMessage {
     }
 
     public int getLocalPort() {
-        return localAddr.getPort();
+        return localPort;
     }
 
     public String getLocalAddr() {
-        return localAddr.getAddress().getHostAddress();
+        return localAddr;
     }
 
     public String getLocalHost() {
-        return localAddr.getHostName();
+        return localHost;
     }
 
     public int getRemotePort() {
-        return remoteAddr.getPort();
+        return remotePort;
     }
 
     public String getRemoteHost() {
-        return remoteAddr.getHostName();
+        return remoteHost;
     }
 
     public String getRemoteAddr() {
-        return remoteAddr.getAddress().getHostAddress();
+        return remoteAddr;
     }
 
-    public BaseHttpMessage setRemoteAddr(InetSocketAddress address) {
-        this.remoteAddr = address;
+    public BaseHttpMessage setRemoteInetAddr(InetSocketAddress address) {
+        this.remoteAddr = address.getAddress().getHostAddress();
+        this.remoteHost = address.getHostName();
+        this.remotePort = address.getPort();
         return this;
     }
 
-    public BaseHttpMessage setLocalAddr(InetSocketAddress address) {
-        this.localAddr = address;
+    public BaseHttpMessage setLocalInetAddr(InetSocketAddress address) {
+        this.localAddr = address.getAddress().getHostAddress();
+        this.localHost = address.getHostName();
+        this.localPort = address.getPort();
         return this;
     }
 

@@ -22,8 +22,19 @@ libraries.vfs = [
 
 libraries += [
     junit: 'junit:junit:4.11',
-    netty: 'io.netty:netty-all:4.0.0.CR7',
+    netty: 'io.netty:netty-all:4.0.1.Final',
     javassist: 'org.javassist:javassist:3.18.0-GA',
     vfs: 'org.jboss:jboss-vfs:3.2.0.Beta1',
     jasper: 'org.glassfish.web:javax.servlet.jsp:2.3.2',
 ]
+
+libraries.hydra_core = 'org.gethydrated.hydra:core:1.1.0-SNAPSHOT@jar'
+libraries.hydra_utils= 'org.gethydrated.hydra:util:1.1.0-SNAPSHOT@jar'
+libraries.hydra_api= 'org.gethydrated.hydra:api:1.1.0-SNAPSHOT@jar'
+libraries.hydra_config= 'org.gethydrated.hydra:config:1.1.0-SNAPSHOT@jar'
+libraries.hydra_actors= 'org.gethydrated.hydra:actors:1.1.0-SNAPSHOT@jar'
+
+libraries.jackson_core = 'com.fasterxml.jackson.core:jackson-core:2.2.2@jar'
+libraries.jackson_databind = 'com.fasterxml.jackson.core:jackson-databind:2.2.2@jar'
+libraries.jackson_jaxb = 'com.fasterxml.jackson.module:jackson-module-jaxb-annotations:2.2.2@jar'
+libraries.jackson_annotations = 'com.fasterxml.jackson.core:jackson-annotations:2.2.2@jar'

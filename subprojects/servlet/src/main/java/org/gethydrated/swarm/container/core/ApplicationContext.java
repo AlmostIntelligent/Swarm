@@ -12,6 +12,9 @@ import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.vfs.VirtualFile;
+import org.jboss.vfs.VisitorAttributes;
+import org.jboss.vfs.util.FilterVirtualFileVisitor;
+import org.jboss.vfs.util.MatchAllVirtualFileFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,6 +30,7 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.net.URLConnection;
 import java.util.*;
 import java.util.Map.Entry;
@@ -53,6 +57,8 @@ public class ApplicationContext extends AbstractContainer implements ServletCont
 
     private final Map<String, Object> attributes = new HashMap<>();
 
+    private final Set<TaglibDescriptor> taglibs = new HashSet<>();
+
     //will be done by hydra later on
     private final SessionService sessionService = new SessionService();
 
@@ -71,16 +77,6 @@ public class ApplicationContext extends AbstractContainer implements ServletCont
         contextLoader = new DeploymentModuleLoader(Module.getBootModuleLoader());
         welcomeFiles.add("index.html");
         welcomeFiles.add("index.jsp");
-    }
-
-    public void invoke(SwarmHttpRequest request, SwarmHttpResponse response) {
-        try {
-            response.setHttpVersion(request.getHttpVersion());
-            response.setRequestId(request.getRequestId());
-            invoke(new ServletRequestWrapper(request, this), new ServletResponseWrapper(response, this));
-        } catch (Exception e) {
-            getLogger().error("Error while processing servlet: {}",e);
-        }
     }
 
     public Set<String> addServletMapping(ServletContainer container, String... urlPatterns) {
@@ -181,6 +177,19 @@ public class ApplicationContext extends AbstractContainer implements ServletCont
         return root.getChild(path);
     }
 
+    public void invoke(SwarmHttpRequest request, SwarmHttpResponse response) {
+        try {
+            response.setHttpVersion(request.getHttpVersion());
+            response.setRequestId(request.getRequestId());
+            ServletRequestWrapper requestWrapper = new ServletRequestWrapper(request, this);
+            ServletResponseWrapper responseWrapper = new ServletResponseWrapper(response, this);
+            invoke(requestWrapper, responseWrapper);
+            responseWrapper.getWriter().flush();
+        } catch (Exception e) {
+            getLogger().error("Error while processing servlet: {}",e);
+        }
+    }
+
     public void invoke(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         if (getState() != LifecycleState.RUNNING) {
             throw new IllegalStateException("Context not in RUNNING state.");
@@ -219,6 +228,25 @@ public class ApplicationContext extends AbstractContainer implements ServletCont
             return s;
         }
         return null;
+    }
+
+    public void addJspTagLib(final String tagName, final String path) {
+        taglibs.add(new TaglibDescriptor() {
+            @Override
+            public String getTaglibURI() {
+                return tagName;
+            }
+
+            @Override
+            public String getTaglibLocation() {
+                return path;
+            }
+
+            @Override
+            public String toString() {
+                return tagName + ":" + path;
+            }
+        });
     }
 
     /* ----- Container methods ---------------------*/
@@ -302,32 +330,51 @@ public class ApplicationContext extends AbstractContainer implements ServletCont
 
     @Override
     public int getEffectiveMajorVersion() {
-        return MAJOR_VERSION;
+        return 3;
     }
 
     @Override
     public int getEffectiveMinorVersion() {
-        return MINOR_VERSION;
+        return 0;
     }
 
     @Override
     public String getMimeType(String file) {
-        return URLConnection.getFileNameMap().getContentTypeFor(file);
+        return (file != null) ? URLConnection.getFileNameMap().getContentTypeFor(file) : null;
     }
 
     @Override
     public Set<String> getResourcePaths(String path) {
-        return null;
+        VirtualFile file = getResourceAsFile(path);
+        if (!file.exists()) {
+            return null;
+        }
+        FilterVirtualFileVisitor visitor = new FilterVirtualFileVisitor(MatchAllVirtualFileFilter.INSTANCE, VisitorAttributes.DEFAULT);
+        try {
+            file.visit(visitor);
+            Set<String> result = new HashSet<>();
+            for (VirtualFile f : visitor.getMatched()) {
+                result.add("/" + f.getPathNameRelativeTo(root) + (f.isDirectory() ? "/" : ""));
+            }
+            return result;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     @Override
     public URL getResource(String path) throws MalformedURLException {
+        logger.info(path);
         return module.getClassLoader().getResource(path);
     }
 
     @Override
     public InputStream getResourceAsStream(String path) {
-        return module.getClassLoader().getResourceAsStream(path);
+        logger.info(path);
+        InputStream s =module.getClassLoader().findResourceAsStream(path, false);
+        logger.info("{}", s);
+        return s;
     }
 
     @Override
@@ -555,64 +602,32 @@ public class ApplicationContext extends AbstractContainer implements ServletCont
 
     @Override
     public void addListener(String className) {
-
+        logger.warn("adding listener {}",className);
     }
 
     @Override
     public <T extends EventListener> void addListener(T t) {
-
+        logger.warn("adding listener {}",t);
     }
 
     @Override
     public void addListener(Class<? extends EventListener> listenerClass) {
-
+        logger.warn("adding listener {}",listenerClass);
     }
 
     @Override
     public <T extends EventListener> T createListener(Class<T> clazz) throws ServletException {
+        logger.warn("adding listener {}",clazz);
         return null;
     }
 
     @Override
     public JspConfigDescriptor getJspConfigDescriptor() {
+        System.out.println(taglibs);
         return new JspConfigDescriptor() {
             @Override
             public Collection<TaglibDescriptor> getTaglibs() {
-                Set<TaglibDescriptor> tags = new HashSet<>();
-                tags.add(new TaglibDescriptor() {
-                    @Override
-                    public String getTaglibURI() {
-                        return "http://tomcat.apache.org/debug-taglib";
-                    }
-
-                    @Override
-                    public String getTaglibLocation() {
-                        return "/WEB-INF/jsp/debug-taglib.tld";
-                    }
-                });
-                tags.add(new TaglibDescriptor() {
-                    @Override
-                    public String getTaglibURI() {
-                        return "http://tomcat.apache.org/example-taglib";
-                    }
-
-                    @Override
-                    public String getTaglibLocation() {
-                        return "/WEB-INF/jsp/example-taglib.tld";
-                    }
-                });
-                tags.add(new TaglibDescriptor() {
-                    @Override
-                    public String getTaglibURI() {
-                        return "http://tomcat.apache.org/jsp2-example-taglib";
-                    }
-
-                    @Override
-                    public String getTaglibLocation() {
-                        return "/WEB-INF/jsp2/jsp2-example-taglib.tld";
-                    }
-                });
-                return tags;
+                return new HashSet<>(taglibs);
             }
 
             @Override
@@ -625,7 +640,8 @@ public class ApplicationContext extends AbstractContainer implements ServletCont
 
     @Override
     public ClassLoader getClassLoader() {
-        return module.getClassLoader();
+        return new URLClassLoader(new URL[0],module.getClassLoader());
+        //return module.getClassLoader();
     }
 
     @Override

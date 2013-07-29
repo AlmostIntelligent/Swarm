@@ -11,4 +11,5 @@ dependencies {
     provided libraries.vfs
     provided libraries.modules
     runtime libraries.jasper
+    compile libraries.hydra_api
 }

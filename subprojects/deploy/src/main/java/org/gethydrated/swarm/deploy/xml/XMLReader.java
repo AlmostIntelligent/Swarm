@@ -17,5 +17,5 @@ public interface XMLReader<T> {
      * @param inputStream XML input.
      * @return Parse result.
      */
-    T parse(InputStream inputStream);
+    T parse(InputStream inputStream) throws Exception;
 }

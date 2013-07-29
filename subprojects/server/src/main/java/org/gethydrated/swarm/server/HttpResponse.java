@@ -6,7 +6,7 @@ package org.gethydrated.swarm.server;
 public interface HttpResponse extends HttpMessage {
     boolean isKeepAlive();
 
-    StringBuffer getContentBuffer();
+    String getContent();
 
     String getContentType();
 
