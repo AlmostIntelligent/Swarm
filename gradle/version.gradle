@@ -14,12 +14,12 @@ if (project.hasProperty("buildTimestamp")) {
 	if (timestampFile.isFile()) {
 		boolean uptodate = true
 		def modified = timestampFile.lastModified()
-		project(':servlet').fileTree('src/main').visit {fte ->
+		/*project(':servlet').fileTree('src/main').visit {fte ->
 			if (fte.file.isFile() && fte.lastModified > modified) {
 				uptodate = false
 				fte.stopVisiting()
 			}
-		}
+		}*/
 		if (!uptodate) {
 			timestampFile.setLastModified(new Date().time)
 		}

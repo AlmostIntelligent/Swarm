@@ -1,9 +1,5 @@
-include 'deploy'
 include 'dist'
 include 'launcher'
-include 'server'
-include 'servlet'
-include 'spec'
 
 rootProject.name = 'swarm'
 rootProject.children.each { project ->

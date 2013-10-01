@@ -12,8 +12,6 @@ tasks.withType(AbstractArchiveTask) {
 }
 
 dependencies {
-    testCompile project(':server')
-	testCompile project(':servlet')
     testCompile project(':launcher')
 }
 

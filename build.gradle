@@ -12,16 +12,12 @@ buildTypes {
 
 apply from: "gradle/dependencies.gradle"
 apply from: "gradle/version.gradle"
-apply from: "gradle/idea.gradle"
 
 allprojects {
 	group = 'org.gethydrated.swarm'
 
 	repositories {
         mavenCentral()
-        maven {
-            url "https://oss.sonatype.org/content/repositories/snapshots/"
-        }
 	}
 }
 
