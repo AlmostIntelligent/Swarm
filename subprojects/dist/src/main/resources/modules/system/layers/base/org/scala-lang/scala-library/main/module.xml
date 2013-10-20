@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<module xmlns="urn:jboss:module:1.1" name="org.scala-lang.scala-library">
+    <properties>
+        <property name="swarm.api" value="private"/>
+    </properties>
+
+    <resources>
+        <resource-root path="scala-library-2.10.2.jar"/>
+    </resources>
+
+    <dependencies>
+    	<module name="sun.jdk"/>
+    </dependencies>
+</module>

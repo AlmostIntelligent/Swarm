@@ -1,13 +1,18 @@
 package org.gethydrated.swarm.launcher;
 
-import org.gethydrated.hydra.api.service.SID;
-import org.gethydrated.hydra.core.HydraFactory;
-import org.gethydrated.hydra.core.InternalHydra;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.log.JDKModuleLogger;
 import org.jboss.vfs.VFS;
 import org.jboss.vfs.VirtualFile;
+
+import com.typesafe.config.Config;
+
+import akka.actor.ActorRef;
+import akka.actor.ActorSelection;
+import akka.actor.ActorSystem;
+import akka.actor.Props;
+import akka.cluster.Cluster;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -20,21 +25,19 @@ public class Main {
     public static void main(String[] args) {
         Module.setModuleLogger(new JDKModuleLogger(java.util.logging.Logger.getLogger("org.jboss.modules"),
                 java.util.logging.Logger.getLogger("org.jboss.modules.define")) );
-
-
+        ActorSystem system = null; 
         try {
             Module.registerURLStreamHandlerFactoryModule(Module.getBootModuleLoader().loadModule(ModuleIdentifier.create("org.jboss.jboss-vfs")));
             validateSwarmDirectories();
+            Config cfg = ConfigBuilder.build();
+            system = ActorSystem.create("swarm", cfg);
 
-            HydraFactory factory = HydraFactory.create();
-            factory.addResolver(new SwarmServiceResolver());
-            InternalHydra hydra = (InternalHydra) factory.getHydra();
-            SID mapping = hydra.startService("swarm::mapping");
-            //WORKAROUND: sync with registration. Needs rewrite in hydra.
-            mapping.ask("init").get();
-            hydra.startService("swarm::server");
-            hydra.startService("swarm::scanner");
-            hydra.await();
+            system.actorOf(Props.create(Reaper.class), "reaper");
+            ActorSelection reaper = system.actorSelection("/user/reaper");
+            System.out.println(reaper);
+            ActorRef ref = system.actorOf(Props.create(TestActor.class), "test");
+            System.out.println(ref);
+            ref.tell("die", null);
         } catch (Throwable t) {
             fail(t);
         }

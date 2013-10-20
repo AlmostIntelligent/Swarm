@@ -7,6 +7,8 @@ dependencies {
     provided libraries.vfs
     provided libraries.modules
     compile libraries.javassist
+	compile libraries.akka
+	compile libraries.akkacluster
 }
 
 jar {
