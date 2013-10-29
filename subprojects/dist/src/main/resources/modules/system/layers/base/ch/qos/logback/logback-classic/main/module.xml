@@ -13,5 +13,6 @@
     <dependencies>
 		<module name="ch.qos.logback.logback-core"/>
 		<module name="org.slf4j.slf4j-api"/>
+		<module name="javax.api"/>
     </dependencies>
 </module>

@@ -19,7 +19,9 @@
         <module name="com.typesafe.akka.akka-actor_210"/>
         <module name="com.typesafe.akka.akka-cluster_210"/>
         <module name="com.typesafe.akka.akka-remote_210"/>
+        <module name="com.typesafe.akka.akka-slf4j_210"/>
         <module name="com.typesafe.config"/>
         <module name="com.google.protobuf.protobuf-java"/>
+        <module name="ch.qos.logback.logback-core"/>
     </dependencies>
 </module>

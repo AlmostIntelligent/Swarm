@@ -8,14 +8,17 @@ import org.jboss.vfs.VirtualFile;
 
 import com.typesafe.config.Config;
 
-import akka.actor.ActorRef;
-import akka.actor.ActorSelection;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
-import akka.cluster.Cluster;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  *
@@ -25,25 +28,87 @@ public class Main {
     public static void main(String[] args) {
         Module.setModuleLogger(new JDKModuleLogger(java.util.logging.Logger.getLogger("org.jboss.modules"),
                 java.util.logging.Logger.getLogger("org.jboss.modules.define")) );
-        ActorSystem system = null; 
+        if (args.length == 1 && args[0].equals("-h")) {
+        	printUsage(System.out);
+        	SystemExit.exit(ExitCode.EXIT);
+        }
         try {
             Module.registerURLStreamHandlerFactoryModule(Module.getBootModuleLoader().loadModule(ModuleIdentifier.create("org.jboss.jboss-vfs")));
             validateSwarmDirectories();
-            Config cfg = ConfigBuilder.build();
-            system = ActorSystem.create("swarm", cfg);
-
-            system.actorOf(Props.create(Reaper.class), "reaper");
-            ActorSelection reaper = system.actorSelection("/user/reaper");
-            System.out.println(reaper);
-            ActorRef ref = system.actorOf(Props.create(TestActor.class), "test");
-            System.out.println(ref);
-            ref.tell("die", null);
+            configureLogback();
+            Config cfg = AkkaConfigBuilder.build(args);
+            if (cfg != null) {
+	            final ActorSystem system = ActorSystem.create("swarm", cfg);
+	            system.actorOf(Props.create(Reaper.class), "reaper");
+	            
+	            Thread t = new Thread(new Runnable() {
+	
+					@Override
+					public void run() {
+						BufferedReader buffer = new BufferedReader(new InputStreamReader(System.in));
+						while(true) {
+							try {
+								String inp = buffer.readLine();
+								handleInput(inp, system);
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+						}
+						
+					}});
+	            t.setDaemon(true);
+	            t.start();
+            }
         } catch (Throwable t) {
             fail(t);
         }
     }
 
-    private static void validateSwarmDirectories() throws IOException, URISyntaxException {
+    private static void configureLogback() throws MalformedURLException {
+    	final Map<String, String> properties = new HashMap<>();
+        properties.put("HYDRA_HOME", System.getProperty("swarm.home.dir"));
+        VirtualFile homeDir = VFS.getChild(System.getProperty("swarm.home.dir"));
+        VirtualFile confDir = (System.getProperty("swarm.conf.dir") == null) ? homeDir.getChild("conf") : VFS.getChild(System.getProperty("swarm.conf.dir"));
+        VirtualFile logbackCfg = confDir.getChild("logging.xml");
+        if (logbackCfg.exists()) {
+        	LogbackConfigurator.configure(logbackCfg.asFileURL(), properties);
+        } else {
+        	throw new IllegalStateException("Could not find logging.xml at " + confDir + ".");
+        }
+	}
+
+	public static void fail(Throwable t) {
+        if (t != null) {
+            t.printStackTrace(System.err);
+        }
+        SystemExit.exit(ExitCode.FAIL);
+    }
+    
+    
+    public static void printUsage(PrintStream out) {
+		out.println("Usage:");
+		out.println(" swarm <options>");
+		out.println("  where possible options include:");
+		out.println("   -h          This usage information");
+		out.println("   -p <int>    Port used by swarm clustering layer");
+		out.println("   -p          Ask for port on startup");
+		out.println("   -hn         Hostname used by swarm clustering layer");
+		out.println("   -r <id>     Adds a new role to this swarm instance");	
+	}
+    
+	protected static void handleInput(String inp, ActorSystem system) {
+    	switch(inp) {
+    		case "exit":
+    		case "x":
+    			system.shutdown();
+    			system.awaitTermination();
+    			break;
+    		default:
+    			break;
+    	}
+	}
+    
+	private static void validateSwarmDirectories() throws IOException, URISyntaxException {
         VirtualFile homeDir = VFS.getChild(System.getProperty("swarm.home.dir"));
         checkDirectory(homeDir);
         VirtualFile confDir = (System.getProperty("swarm.conf.dir") == null) ? homeDir.getChild("conf") : VFS.getChild(System.getProperty("swarm.conf.dir"));
@@ -60,12 +125,5 @@ public class Main {
         if (!dir.exists() || !dir.isDirectory()) {
             throw new IOException("Invalid directory: '" + dir.getPathName() + "'.");
         }
-    }
-
-    public static void fail(Throwable t) {
-        if (t != null) {
-            t.printStackTrace(System.err);
-        }
-        SystemExit.exit(ExitCode.FAIL);
     }
 }

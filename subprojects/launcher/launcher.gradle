@@ -9,6 +9,7 @@ dependencies {
     compile libraries.javassist
 	compile libraries.akka
 	compile libraries.akkacluster
+	compile libraries.akkalogger
 }
 
 jar {
