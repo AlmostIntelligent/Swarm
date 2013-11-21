@@ -1,5 +1,7 @@
 include 'dist'
 include 'launcher'
+include 'core'
+include 'spec'
 
 rootProject.name = 'swarm'
 rootProject.children.each { project ->

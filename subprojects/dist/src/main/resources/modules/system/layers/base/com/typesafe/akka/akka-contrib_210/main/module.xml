@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<module xmlns="urn:jboss:module:1.1" name="com.typesafe.akka.akka-contrib_210">
+    <properties>
+        <property name="swarm.api" value="private"/>
+    </properties>
+
+    <resources>
+        <resource-root path="akka-contrib_2.10-2.2.3.jar"/>
+    </resources>
+
+    <dependencies>
+    	<module name="com.typesafe.akka.akka-actor_210"/>
+    	<module name="com.typesafe.akka.akka-cluster_210"/>
+    	<module name="org.scala-lang.scala-library"/>
+    	<module name="com.typesafe.config"/>
+    	<module name="sun.jdk"/>
+    </dependencies>
+</module>

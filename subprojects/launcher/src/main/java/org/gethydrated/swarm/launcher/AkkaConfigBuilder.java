@@ -85,6 +85,7 @@ public class AkkaConfigBuilder {
 		checkNotNull("port",cfg);
 	}
 	
+	@SuppressWarnings("unchecked")
 	public static final Config fillCfg(Map<String, Object> cfg) throws IOException {
 		Map<String, Object> props = new HashMap<>();
 		if (cfg.containsKey("hostname")) {
@@ -92,6 +93,9 @@ public class AkkaConfigBuilder {
 		}
 		if (cfg.containsKey("port")) {
 			props.put("akka.remote.netty.tcp.port", cfg.get("port"));
+		}
+		if (!((List<String>)cfg.get("roles")).isEmpty()) {
+			props.put("akka.cluster.roles", cfg.get("roles"));
 		}
 		VirtualFile homeDir = VFS.getChild(System.getProperty("swarm.home.dir"));
 		VirtualFile cfgfile = (System.getProperty("swarm.conf.dir") == null) ? homeDir.getChild("conf") : VFS.getChild(System.getProperty("swarm.conf.dir"));

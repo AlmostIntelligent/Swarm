@@ -11,6 +11,7 @@
 
     <dependencies>
     	<module name="org.scala-lang.scala-library"/>
+    	<module name="com.typesafe.akka.akka-contrib_210"/>
     	<module name="com.typesafe.config"/>
     	<module name="sun.jdk"/>
     </dependencies>

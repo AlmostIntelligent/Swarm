@@ -10,6 +10,7 @@ dependencies {
 	compile libraries.akka
 	compile libraries.akkacluster
 	compile libraries.akkalogger
+	compile project(":core")
 }
 
 jar {

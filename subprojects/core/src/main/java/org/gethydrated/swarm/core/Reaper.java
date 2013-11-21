@@ -1,4 +1,4 @@
-package org.gethydrated.swarm.launcher;
+package org.gethydrated.swarm.core;
 
 import java.util.LinkedList;
 import java.util.List;

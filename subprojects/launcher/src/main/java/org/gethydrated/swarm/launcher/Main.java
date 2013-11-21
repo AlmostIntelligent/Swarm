@@ -1,5 +1,8 @@
 package org.gethydrated.swarm.launcher;
 
+import org.gethydrated.swarm.core.Reaper;
+import org.gethydrated.swarm.core.starter.HttpActorStarter;
+import org.gethydrated.swarm.core.starter.ServletActorStarter;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.log.JDKModuleLogger;
@@ -18,6 +21,7 @@ import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -40,7 +44,15 @@ public class Main {
             if (cfg != null) {
 	            final ActorSystem system = ActorSystem.create("swarm", cfg);
 	            system.actorOf(Props.create(Reaper.class), "reaper");
-	            
+	            if(cfg.hasPath("akka.cluster.roles")) {
+	            	List<String> roles = cfg.getStringList("akka.cluster.roles");
+	            	if (roles.contains("http")) {
+	    	            system.actorOf(Props.create(HttpActorStarter.class));	
+	            	}
+	            	if (roles.contains("servlet")) {
+	            		system.actorOf(Props.create(ServletActorStarter.class));	
+	            	}
+	            }
 	            Thread t = new Thread(new Runnable() {
 	
 					@Override

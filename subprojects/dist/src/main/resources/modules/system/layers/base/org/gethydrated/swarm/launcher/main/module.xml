@@ -12,6 +12,7 @@
     </resources>
 
     <dependencies>
+    	<module name="org.gethydrated.swarm.core"/>
 		<module name="org.jboss.modules"/>
 		<module name="org.jboss.jboss-vfs"/>
 		<module name="org.slf4j.slf4j-api"/>

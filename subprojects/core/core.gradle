@@ -1,0 +1,12 @@
+apply from: "$rootDir/gradle/provided.gradle"
+
+dependencies {
+	compile libraries.akka
+	compile libraries.akkacluster
+	compile libraries.akkacontrib
+	compile libraries.netty
+	compile libraries.slf4j_api
+	compile project(":spec")
+	provided libraries.vfs
+	provided libraries.modules
+}
