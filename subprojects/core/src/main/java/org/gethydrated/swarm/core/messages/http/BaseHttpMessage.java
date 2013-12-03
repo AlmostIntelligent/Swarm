@@ -1,12 +1,18 @@
 package org.gethydrated.swarm.core.messages.http;
 
 import javax.servlet.http.Cookie;
+
+import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.Map.Entry;
 
-public class BaseHttpMessage implements HttpMessage {
-    private String httpVersion;
+public class BaseHttpMessage implements HttpMessage, Serializable {
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = -3637719279223611627L;
+	private String httpVersion;
     private long requestId;
     private Set<Pair> headers = new HashSet<>();
     private String serverName;
@@ -136,8 +142,22 @@ public class BaseHttpMessage implements HttpMessage {
         return cookies;
     }
 
-    private static class Pair {
-        private final String key;
+    @Override
+	public String toString() {
+		return "BaseHttpMessage{ httpVersion=" + httpVersion + ", requestId="
+				+ requestId + ", headers=" + headers + ", serverName="
+				+ serverName + ", localAddr=" + localAddr + ", localHost="
+				+ localHost + ", localPort=" + localPort + ", remoteAddr="
+				+ remoteAddr + ", remoteHost=" + remoteHost + ", remotePort="
+				+ remotePort + ", cookies=" + cookies + "}";
+	}
+
+	private static class Pair implements Serializable {
+        /**
+		 * 
+		 */
+		private static final long serialVersionUID = -8075205219255030456L;
+		private final String key;
         private final String value;
 
         public Pair(String key, String value) {
@@ -145,4 +165,6 @@ public class BaseHttpMessage implements HttpMessage {
             this.value = value;
         }
     }
+    
+    
 }

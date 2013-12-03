@@ -1,6 +1,6 @@
 package org.gethydrated.swarm.core.servlets.modules;
 
-import org.gethydrated.swarm.core.servlets.container.Lifecycle;
+import org.gethydrated.swarm.core.servlets.container.LifecycleAware;
 import org.jboss.modules.DependencySpec;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;

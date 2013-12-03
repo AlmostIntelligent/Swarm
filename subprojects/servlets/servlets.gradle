@@ -1,0 +1,5 @@
+dependencies {
+	compile 'javax.servlet:javax.servlet-api:3.1.0'
+    compile project(":core")
+    compile libraries.vfs
+}

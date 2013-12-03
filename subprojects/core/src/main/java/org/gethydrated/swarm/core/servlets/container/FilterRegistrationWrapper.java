@@ -12,9 +12,9 @@ import java.util.Set;
  */
 public class FilterRegistrationWrapper implements FilterRegistration.Dynamic {
 
-    private final FilterContainerFacade container;
+    private final FilterContainer container;
 
-    public FilterRegistrationWrapper(FilterContainerFacade container) {
+    public FilterRegistrationWrapper(FilterContainer container) {
         this.container = container;
     }
 

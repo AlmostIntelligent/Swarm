@@ -1,68 +1,32 @@
 package org.gethydrated.swarm.core.servlets.container;
 
-import javax.servlet.Servlet;
+import javax.servlet.ServletRegistration.Dynamic;
 
-import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 
 public class ServletContainerFacade {
 
-	private String name;
+	private ServletRegistrationWrapper registration;
+	private ActorRef ref;
 	
-	private ApplicationContext ctx;
-	
-	public ServletContainerFacade(String servletName, ActorContext rootContext,
-			ActorRef rootRef, ApplicationContext ctx) {
-		this.name = servletName;
-		this.ctx = ctx;
+	public ServletContainerFacade(String servletName, ApplicationContext ctx) {
+		this.registration = new ServletRegistrationWrapper(servletName, ctx);
 	}
 
 	public String getName() {
-		return name;
+		return registration.getName();
 	}
 
 	public ActorRef ref() {
-		// TODO Auto-generated method stub
-		return null;
+		return ref;
 	}
 
-	public boolean isComplete() {
-		// TODO Auto-generated method stub
-		return false;
+	public Dynamic getRegistration() {
+		return registration;
 	}
 
-	public void setServletClass(String className) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	public void setServletClass(Servlet servlet) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	public ApplicationContext getServletContext() {
-		return ctx;
-	}
-
-	public boolean setInitParameter(String name, String value) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	public String getInitParameter(String name) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public String getClassName() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public String getServletName() {
-		// TODO Auto-generated method stub
-		return null;
+	public void setRef(ActorRef ref) {
+		this.ref = ref;
 	}
 
 }

@@ -13,13 +13,11 @@ public class Reaper extends UntypedActor {
 	
 	private void allSoulsReaped() {
 		this.context().system().shutdown();
-		System.out.println("all reaped");
 	}
 	
 	@Override
 	public void onReceive(Object o) throws Exception {
 		if (o instanceof String && o.equals("WatchMe")) {
-			System.out.println("new soul:" + sender());
 			souls.add(sender());
 			context().watch(sender());
 		} else if (o instanceof Terminated) {

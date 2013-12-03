@@ -1,4 +1,4 @@
-package org.gethydrated.swarm.core.servlets.servlet;
+package org.gethydrated.swarm.servlets;
 
 import org.gethydrated.swarm.core.servlets.container.ApplicationContext;
 import org.jboss.vfs.VirtualFile;
@@ -37,6 +37,8 @@ public class DefaultServlet extends HttpServlet {
 
             VirtualFile file = ((ApplicationContext)req.getServletContext()).getResourceAsFile(req.getPathInfo());
 
+            logger.info("file: {}", file);
+            
             if (file.isDirectory()) {
                 if (!req.getPathInfo().endsWith("/")) {
                     resp.setStatus(HttpServletResponse.SC_FOUND);
@@ -81,6 +83,7 @@ public class DefaultServlet extends HttpServlet {
     }
 
     private void sendContent(HttpServletRequest req, HttpServletResponse resp, InputStream is) throws IOException {
+    	logger.info("{}", is);
         if (is == null) {
             return;
         }

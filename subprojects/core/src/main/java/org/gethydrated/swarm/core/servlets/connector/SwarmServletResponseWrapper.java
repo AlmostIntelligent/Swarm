@@ -2,6 +2,7 @@ package org.gethydrated.swarm.core.servlets.connector;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Locale;
 
@@ -12,17 +13,21 @@ import javax.servlet.http.HttpServletResponse;
 import org.gethydrated.swarm.core.messages.http.SwarmHttpResponse;
 import org.gethydrated.swarm.core.servlets.container.ApplicationContext;
 
-public class SwarmServletResponseWrapper implements HttpServletResponse {
+public class SwarmServletResponseWrapper implements HttpServletResponse, Serializable {
 
-    private final ApplicationContext context;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = -6247914187750701535L;
+
+	private transient ApplicationContext context;
 
     private final SwarmHttpResponse response;
 
-    private PrintWriter writer;
+    private transient PrintWriter writer;
 
-    public SwarmServletResponseWrapper(SwarmHttpResponse response, ApplicationContext context) {
+    public SwarmServletResponseWrapper(SwarmHttpResponse response) {
         this.response = response;
-        this.context = context;
     }
 
     @Override
@@ -216,4 +221,21 @@ public class SwarmServletResponseWrapper implements HttpServletResponse {
     public Locale getLocale() {
         return null;
     }
+
+	public ApplicationContext getContext() {
+		return context;
+	}
+
+	public void setContext(ApplicationContext context) {
+		this.context = context;
+	}
+	
+	public SwarmHttpResponse unwrap() {
+		return response;
+	}
+
+	@Override
+	public String toString() {
+		return "SwarmServletResponseWrapper [response=" + response + "]";
+	}
 }

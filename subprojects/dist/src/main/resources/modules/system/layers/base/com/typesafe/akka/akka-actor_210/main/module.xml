@@ -14,5 +14,6 @@
     	<module name="com.typesafe.akka.akka-contrib_210"/>
     	<module name="com.typesafe.config"/>
     	<module name="sun.jdk"/>
+    	<module name="javax.servlet.servlet-api"/>
     </dependencies>
 </module>

@@ -1,11 +1,13 @@
 package org.gethydrated.swarm.core.servlets.container;
 
+import org.gethydrated.swarm.core.messages.container.ApplicationFilterChain;
 import org.gethydrated.swarm.core.messages.http.SwarmHttpRequest;
 import org.gethydrated.swarm.core.messages.http.SwarmHttpResponse;
+import org.gethydrated.swarm.core.messages.session.SessionObject;
+import org.gethydrated.swarm.core.messages.session.SessionRequest;
 import org.gethydrated.swarm.core.servlets.connector.SwarmServletRequestWrapper;
 import org.gethydrated.swarm.core.servlets.connector.SwarmServletResponseWrapper;
 import org.gethydrated.swarm.core.servlets.modules.DeploymentModuleLoader;
-import org.gethydrated.swarm.core.servlets.session.SessionObject;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
@@ -23,6 +25,7 @@ import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
 import akka.actor.ActorSystem;
+import akka.cluster.Cluster;
 import akka.event.LoggingAdapter;
 import akka.pattern.Patterns;
 import akka.util.Timeout;
@@ -49,7 +52,7 @@ import java.util.regex.Pattern;
 /**
  *
  */
-public class ApplicationContext implements ServletContext, Serializable {
+public class ApplicationContext implements LifecycleAware, ServletContext, Serializable {
 
     /**
 	 * 
@@ -63,12 +66,12 @@ public class ApplicationContext implements ServletContext, Serializable {
     private LoggingAdapter logger;
 
     private final Map<String, ServletContainerFacade> servlets = new HashMap<>();
+    
+    private final Map<String, String> servletMappings = new HashMap<>();
+    
+    private final Map<String, FilterContainer> filters = new HashMap<>();
 
-    private final Map<String, FilterContainerFacade> filters = new HashMap<>();
-
-    private final Map<String, ServletContainerFacade> servletMappings = new HashMap<>();
-
-    private final LinkedList<FilterMapping> filterMappings = new LinkedList();
+    private final LinkedList<FilterMapping> filterMappings = new LinkedList<>();
 
     private final Map<String, Object> attributes = new HashMap<>();
 
@@ -87,6 +90,8 @@ public class ApplicationContext implements ServletContext, Serializable {
 	private ActorSystem actorsystem;
 	private ActorContext rootContext;
 	private ActorRef rootRef;
+
+	private LifecycleState state = LifecycleState.CREATED;
     
     public ApplicationContext() {
         this("ROOT");
@@ -99,29 +104,21 @@ public class ApplicationContext implements ServletContext, Serializable {
         welcomeFiles.add("index.jsp");
     }
 
-    public Set<String> addServletMapping(ServletContainerFacade container, String... urlPatterns) {
-        Set<String> duplicates = new HashSet<>();
-        for (String s : urlPatterns) {
-            if (servletMappings.containsKey(s)) {
-                duplicates.add(s);
-            } else {
-                servletMappings.put(s, container);
-            }
-        }
-        return duplicates;
+    public void addServletMapping(String name, String mapping) {
+        servletMappings.put(mapping, name);
     }
 
-    public Set<String> getServletMapping(ServletContainerFacade container) {
+    public Set<String> getServletMapping(String name) {
         Set<String> mappings = new HashSet<>();
-        for (Entry<String, ServletContainerFacade> e : servletMappings.entrySet()) {
-            if (ctxName.equals(e.getValue().getName())) {
+        for (Entry<String, String> e : servletMappings.entrySet()) {
+            if (name.equals(e.getValue())) {
                 mappings.add(e.getKey());
             }
         }
         return mappings;
     }
 
-    public void addFilterMappingUrl(EnumSet<DispatcherType> dispatcherTypes, boolean matchAfter, String[] urlPatterns, FilterContainerFacade container) {
+    public void addFilterMappingUrl(EnumSet<DispatcherType> dispatcherTypes, boolean matchAfter, String[] urlPatterns, FilterContainer container) {
         FilterMapping fm = new FilterMapping(dispatcherTypes, urlPatterns, container);
         if (matchAfter) {
             filterMappings.add(fm);
@@ -130,12 +127,12 @@ public class ApplicationContext implements ServletContext, Serializable {
         }
     }
 
-    private String mapServlet(String request) {
+    public String mapServlet(String request) {
         String matchedPath = null;
         String matchedType = null;
-        for (Entry<String, ServletContainerFacade> e : servletMappings.entrySet()) {
+        for (Entry<String, String> e : servletMappings.entrySet()) {
             Pattern p = Pattern.compile(e.getKey().replaceAll("\\.", "\\\\.").replaceAll("\\*", ".*"));
-            if (p.matcher(request).matches()) {
+            if (p.matcher(request.substring(ctxName.length()+1)).matches()) {
                 if (e.getKey().endsWith("*")) {
                     if (matchedPath == null) {
                         matchedPath = e.getKey();
@@ -160,9 +157,9 @@ public class ApplicationContext implements ServletContext, Serializable {
                 }
             }
         }
-
+        logger.info("Matching: path {}, type {}", matchedPath, matchedType);
         if (matchedPath == null && matchedType == null) {
-            ServletContainerFacade def = servletMappings.get("/");
+            String def = servletMappings.get("/");
             if (def == null) {
                 throw new RuntimeException("no match");
             }
@@ -172,10 +169,10 @@ public class ApplicationContext implements ServletContext, Serializable {
         return (matchedPath != null) ? matchedPath : matchedType;
     }
 
-    private List<FilterContainerFacade> mapFilters(String request, String servlet) {
-        List<FilterContainerFacade> mapped = new LinkedList<>();
+    private List<FilterFacade> mapFilters(String request, String servlet) {
+        List<FilterFacade> mapped = new LinkedList<>();
         for (FilterMapping fm : filterMappings) {
-            mapped.add(fm.filter);
+            mapped.add(new FilterFacade(fm.filter));
         }
         return mapped;
     }
@@ -196,44 +193,32 @@ public class ApplicationContext implements ServletContext, Serializable {
         return root.getChild(path);
     }
 
-    public void invoke(SwarmHttpRequest request, SwarmHttpResponse response) {
-        try {
-            response.setHttpVersion(request.getHttpVersion());
-            response.setRequestId(request.getRequestId());
-            SwarmServletRequestWrapper requestWrapper = new SwarmServletRequestWrapper(request, this);
-            SwarmServletResponseWrapper responseWrapper = new SwarmServletResponseWrapper(response, this);
-            invoke(requestWrapper, responseWrapper);
-            responseWrapper.getWriter().flush();
-        } catch (Exception e) {
-            getLogger().error("Error while processing servlet: {}",e);
-        }
+    public ApplicationFilterChain createFilterChain(SwarmHttpRequest request, SwarmHttpResponse response, ActorRef source) {
+        response.setHttpVersion(request.getHttpVersion());
+        response.setRequestId(request.getRequestId());
+        SwarmServletRequestWrapper requestWrapper = new SwarmServletRequestWrapper(request);
+        SwarmServletResponseWrapper responseWrapper = new SwarmServletResponseWrapper(response);
+        return createFilterChain(requestWrapper, responseWrapper, source);
     }
-
-    public void invoke(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        try {
-            String matched = mapServlet(request.getRequestURI());
-            ServletContainerFacade container = servletMappings.get(matched);
-            logger.info("matched {}", matched);
-            logger.info("matched container {}", container.getName());
-            ((SwarmServletRequestWrapper)request).setServletPath(matched);
-
-            ApplicationFilterChain chain = new ApplicationFilterChain(container.ref(), rootRef);
-            chain.addFilters(mapFilters(request.getRequestURI(), matched));
-            response.setStatus(200);
-            chain.doFilter(request, response);
-        } catch (Throwable t) {
-            t.printStackTrace(response.getWriter());
-            t.printStackTrace();
-            response.sendError(404);
-        }
+    
+    public ApplicationFilterChain createFilterChain(SwarmServletRequestWrapper request, SwarmServletResponseWrapper response, ActorRef source) {
+    	String matched = mapServlet(request.getRequestURI());
+    	String name = servletMappings.get(matched);
+        ServletContainerFacade container = servlets.get(name);
+        logger.info("matched {}", matched);
+        logger.info("matched container {}", container.getName());
+        request.setServletPath(matched);
+        ApplicationFilterChain chain = new ApplicationFilterChain(request, response, container.ref(), source);
+        chain.addFilters(mapFilters(request.getRequestURI(), matched));
+    	return chain;
     }
 
     public SessionObject getSessionObject(boolean create) {
-        ActorSelection sessions = actorsystem.actorSelection("/user/sessions");
+        ActorSelection sessions = actorsystem.actorSelection("/user/singleton/sessions");
     	if (sessionId != null) {
         	
-        	Timeout timeout = new Timeout(Duration.create(5, "seconds"));
-        	Future<Object> f = Patterns.ask(sessions, sessionId, timeout);
+        	Timeout timeout = new Timeout(Duration.create(1, "seconds"));
+        	Future<Object> f = Patterns.ask(sessions, new SessionRequest(sessionId), timeout);
             SessionObject s;
 			try {
 				s = (SessionObject) Await.result(f, timeout.duration());
@@ -273,6 +258,46 @@ public class ApplicationContext implements ServletContext, Serializable {
             }
         });
     }
+    
+    /* ----- LifecycleAware methods ---------------------*/
+    
+	@Override
+	public void init() {
+		if (state == LifecycleState.CREATED) {
+			state = LifecycleState.INIT;
+			try {
+				module = contextLoader.loadModule(ModuleIdentifier.fromString(DeploymentModuleLoader.MODULE_PREFIX + getName()));
+			} catch (Throwable t) {
+				getLogger().error(t, "Failed to initialize context '{}'", ctxName);
+				state = LifecycleState.FAILED;
+			}
+		}
+	}
+
+	@Override
+	public void destroy() {
+		if (state == LifecycleState.RUNNING || state == LifecycleState.FAILED) {
+			state = LifecycleState.DESTROY;
+			try {
+				
+			} catch (Throwable t) {
+				getLogger().error(t, "Failed to destroy context '{}'", ctxName);
+			} finally {
+				state = LifecycleState.STOPPED;
+			}
+		}
+	}
+
+	@Override
+	public LifecycleState getState() {
+		return state;
+	}
+
+	@Override
+	public String getStateName() {
+		return state.toString();
+	}
+    
 
     /* ----- ServletContext methods ---------------------*/
 
@@ -377,6 +402,7 @@ public class ApplicationContext implements ServletContext, Serializable {
 
     @Override
     public void log(Exception exception, String msg) {
+    	getLogger().error(exception, msg);
     }
 
     @Override
@@ -435,7 +461,7 @@ public class ApplicationContext implements ServletContext, Serializable {
 
     @Override
     public String getServletContextName() {
-        return null;
+        return ctxName;
     }
 
     @Override
@@ -460,36 +486,46 @@ public class ApplicationContext implements ServletContext, Serializable {
 
         className = (className != null && className.equals("")) ? null : className;
 
-        ServletContainerFacade container = servlets.get(servletName);
+        ServletContainerFacade facade = servlets.get(servletName);
 
-        if (container != null) {
-            if (container.isComplete()) {
+        if (facade != null) {
+        	ServletRegistrationWrapper registration = (ServletRegistrationWrapper) facade.getRegistration();
+            if (registration.isComplete()) {
                 return null;
             }
-            container.setServletClass(className);
-            container.setServletClass(servlet);
-            return new ServletRegistrationWrapper(container);
+            registration.setServletClass(className);
+            registration.setServletClass(servlet);
+            return facade.getRegistration();
         }
-        container = new ServletContainerFacade(servletName, rootContext, rootRef, this);
-        container.setServletClass(className);
-        container.setServletClass(servlet);
-        servlets.put(servletName, container);
-        return new ServletRegistrationWrapper(container);
+        facade = new ServletContainerFacade(servletName, this);
+        ServletRegistrationWrapper registration = (ServletRegistrationWrapper) facade.getRegistration();
+        registration.setServletClass(className);
+        registration.setServletClass(servlet);
+        servlets.put(servletName, facade);
+        return registration;
     }
 
     @Override
     public <T extends Servlet> T createServlet(Class<T> clazz) throws ServletException {
-        return null;
+        try {
+			return clazz.newInstance();
+		} catch (Throwable e) {
+			throw new ServletException(e);
+		}
     }
 
     @Override
     public ServletRegistration getServletRegistration(String servletName) {
-        return null;
+        return servlets.get(servletName).getRegistration();
     }
 
     @Override
     public Map<String, ? extends ServletRegistration> getServletRegistrations() {
-        return null;
+    	Map<String, ServletRegistration> results = new HashMap<>();
+        for (Entry<String, ServletContainerFacade> e : servlets.entrySet()) {
+        	results.put(e.getKey(), e.getValue().getRegistration());
+        }
+    	return results;
     }
 
     @Override
@@ -510,7 +546,7 @@ public class ApplicationContext implements ServletContext, Serializable {
     private FilterRegistration.Dynamic addFilter(String filterName, String className, Filter filter) {
         className = (className != null && className.equals("")) ? null : className;
 
-        FilterContainerFacade container = filters.get(filterName);
+        FilterContainer container = filters.get(filterName);
 
         if (container != null) {
             if (container.isComplete()) {
@@ -520,7 +556,7 @@ public class ApplicationContext implements ServletContext, Serializable {
             container.setFilterClass(filter);
             return new FilterRegistrationWrapper(container);
         }
-        container = new FilterContainerFacade(filterName, rootContext, rootRef, this);
+        container = new FilterContainer(filterName, this);
         container.setFilterClass(className);
         container.setFilterClass(filter);
         filters.put(filterName, container);
@@ -529,17 +565,26 @@ public class ApplicationContext implements ServletContext, Serializable {
 
     @Override
     public <T extends Filter> T createFilter(Class<T> clazz) throws ServletException {
-        return null;
+        try {
+			return clazz.newInstance();
+		} catch (Throwable e) {
+			throw new ServletException(e);
+		}
     }
 
     @Override
     public FilterRegistration getFilterRegistration(String filterName) {
-        return null;
+        FilterContainer fc = filters.get(filterName);
+    	return (fc != null) ? new FilterRegistrationWrapper(fc) : null;
     }
 
     @Override
     public Map<String, ? extends FilterRegistration> getFilterRegistrations() {
-        return null;
+    	Map<String, FilterRegistration> results = new HashMap<>();
+    	for (Entry<String, FilterContainer> e : filters.entrySet()) {
+    		results.put(e.getKey(), new FilterRegistrationWrapper(e.getValue()));
+    	}
+        return results;
     }
 
     @Override
@@ -628,16 +673,16 @@ public class ApplicationContext implements ServletContext, Serializable {
 
         private final EnumSet<DispatcherType> dispatcherTypes;
         private final String[] urlPatterns;
-        private final FilterContainerFacade filter;
+        private final FilterContainer filter;
 
-        public FilterMapping(EnumSet<DispatcherType> dispatcherTypes, String[] urlPatterns, FilterContainerFacade filter) {
+        public FilterMapping(EnumSet<DispatcherType> dispatcherTypes, String[] urlPatterns, FilterContainer container) {
             if (dispatcherTypes == null) {
                 this.dispatcherTypes = EnumSet.of(DispatcherType.REQUEST);
             } else {
                 this.dispatcherTypes = dispatcherTypes;
             }
             this.urlPatterns = urlPatterns;
-            this.filter = filter;
+            this.filter = container;
         }
     }
 
@@ -663,5 +708,13 @@ public class ApplicationContext implements ServletContext, Serializable {
 
 	public String getName() {
 		return ctxName;
+	}
+
+	public FilterContainer getFilter(String name) {
+		return filters.get(name);
+	}
+
+	public ServletContainerFacade getServletFacade(String name) {
+		return servlets.get(name);
 	}
 }

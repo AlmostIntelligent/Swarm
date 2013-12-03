@@ -3,7 +3,7 @@ package org.gethydrated.swarm.core.servlets.container;
 import akka.actor.ActorRef;
 import akka.event.LoggingAdapter;
 
-public interface Container extends Lifecycle {
+public interface Container extends LifecycleAware {
 	public LoggingAdapter getLogger();
 	
 	public String getName();

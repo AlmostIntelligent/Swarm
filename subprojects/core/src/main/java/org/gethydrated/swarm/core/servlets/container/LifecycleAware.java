@@ -1,6 +1,6 @@
 package org.gethydrated.swarm.core.servlets.container;
 
-public interface Lifecycle {
+public interface LifecycleAware {
 	
 	public void init();
 	

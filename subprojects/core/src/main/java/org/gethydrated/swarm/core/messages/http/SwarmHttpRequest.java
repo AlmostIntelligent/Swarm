@@ -70,4 +70,13 @@ public class SwarmHttpRequest extends BaseHttpMessage implements HttpRequest, Se
         }
         return this;
     }
+    
+    @Override
+    public String toString() {
+        return "SwarmHttpRequest{" +
+                "uri='" + uri +
+                "', method='" + method +
+                "', parameters='" + parameters + '\'' +
+                ", " + super.toString() + "}";
+    }
 }

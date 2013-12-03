@@ -1,4 +1,4 @@
-package org.gethydrated.swarm.core.servlets.session;
+package org.gethydrated.swarm.core.messages.session;
 
 import java.io.Serializable;
 import java.util.*;

@@ -1,12 +1,16 @@
 package org.gethydrated.swarm.core.messages.container;
 
-import javax.servlet.FilterChain;
+import java.io.Serializable;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.gethydrated.swarm.core.servlets.container.ApplicationFilterChain;
+public class Invoke implements Serializable {
 
-public class Invoke {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -4077560303732615954L;
 
 	protected HttpServletRequest request;
 	
@@ -22,6 +26,11 @@ public class Invoke {
 	
 	public static class InvokeServlet extends Invoke {
 
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = -419221254233885152L;
+
 		public InvokeServlet(HttpServletRequest request,
 				HttpServletResponse response) {
 			this.request = request;
@@ -30,20 +39,16 @@ public class Invoke {
 		
 	}
 	
-	public static class InvokeFilter extends Invoke {
+	public static class InvokationResult extends Invoke {
 
-		private FilterChain chain;
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = -3459462063291445626L;
 		
-		public InvokeFilter(HttpServletRequest request, HttpServletResponse response,
-				ApplicationFilterChain applicationFilterChain) {
+		public InvokationResult(HttpServletRequest request, HttpServletResponse response) {
 			this.request = request;
 			this.response = response;
-			this.chain = applicationFilterChain;
 		}
-		
-		public FilterChain getChain() {
-			return chain;
-		}
-		
 	}
 }

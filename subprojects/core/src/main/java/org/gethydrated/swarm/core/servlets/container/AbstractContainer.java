@@ -1,7 +1,5 @@
 package org.gethydrated.swarm.core.servlets.container;
 
-import java.io.FileNotFoundException;
-
 import akka.actor.ActorRef;
 import akka.actor.UntypedActor;
 import akka.event.Logging;

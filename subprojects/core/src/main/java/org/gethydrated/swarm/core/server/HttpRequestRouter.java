@@ -45,8 +45,17 @@ public class HttpRequestRouter extends UntypedActor {
 		}
 	}
 
+	private boolean containsRoutee(ActorRef actor) {
+		for (LinkedList<ActorRef> l : mappings.values()) {
+			if (l.contains(actor)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	private void addRoutee(String ctxName) {
-		if (!mappings.containsValue(sender())) {
+		if (!containsRoutee(sender())) {
 			if(mappings.containsKey(ctxName)) {
 				LinkedList<ActorRef> l = mappings.get(ctxName);
 				l.add(sender());
@@ -61,6 +70,7 @@ public class HttpRequestRouter extends UntypedActor {
 	}
 
 	public void map(SwarmHttpRequest request) throws Exception {
+		log.info("New request: {}", request);
         String uri = request.getUri();
         String idx;
         if (uri.equals("/") || !uri.substring(1).contains("/")) {
@@ -72,12 +82,10 @@ public class HttpRequestRouter extends UntypedActor {
             idx = "ROOT";
         }
         LinkedList<ActorRef> app = mappings.get(idx);
-        System.out.println(app);
         if (app == null || app.isEmpty()) {
             invoke404(request);
         } else {
         	int i = (int)(Math.random() * ((app.size()-1) + 1));
-        	System.out.println(i);
             app.get(i).tell(request, sender());
         }
 	}

@@ -6,9 +6,11 @@
     </properties>
 
     <resources>
-        <resource-root path="netty-all-4.0.1.Final.jar"/>
+        <resource-root path="netty-all-4.0.12.Final.jar"/>
     </resources>
 
     <dependencies>
+    	<module name="sun.jdk"/>
+    	<module name="org.javassist.javassist"/>
     </dependencies>
 </module>

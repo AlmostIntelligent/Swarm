@@ -6,8 +6,8 @@ import javax.servlet.http.HttpSessionBindingEvent;
 import javax.servlet.http.HttpSessionBindingListener;
 import javax.servlet.http.HttpSessionContext;
 
+import org.gethydrated.swarm.core.messages.session.SessionObject;
 import org.gethydrated.swarm.core.servlets.container.ApplicationContext;
-import org.gethydrated.swarm.core.servlets.session.SessionObject;
 
 import java.util.Enumeration;
 

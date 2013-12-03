@@ -10,7 +10,7 @@ public class SwarmHttpResponse extends BaseHttpMessage implements HttpResponse, 
 	 */
 	private static final long serialVersionUID = -1005762846894087932L;
 	private boolean keepAlive = false;
-    private String content;
+    private String content = "";
     private String contentType = "";
     private int status;
 
@@ -67,9 +67,9 @@ public class SwarmHttpResponse extends BaseHttpMessage implements HttpResponse, 
     public String toString() {
         return "SwarmHttpResponse{" +
                 "keepAlive=" + keepAlive +
-                ", content=" + content +
-                ", contentType='" + contentType + '\'' +
+                ", content='" + content +
+                "', contentType='" + contentType + '\'' +
                 ", status=" + status +
-                '}';
+                ", " + super.toString() + "}";
     }
 }

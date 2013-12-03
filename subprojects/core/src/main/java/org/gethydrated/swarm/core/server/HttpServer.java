@@ -10,6 +10,8 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import akka.actor.ActorSelection;
 import akka.actor.UntypedActor;
+import akka.event.Logging;
+import akka.event.LoggingAdapter;
 
 public class HttpServer extends UntypedActor {
 
@@ -18,6 +20,7 @@ public class HttpServer extends UntypedActor {
 	private ServerBootstrap serverBootstrap;
 	private ActorSelection router;
 	private ChannelMapper channelMapper;
+	private LoggingAdapter log = Logging.getLogger(getContext().system(), this);
 	
 	@Override
 	public void onReceive(Object obj) throws Exception {
@@ -53,9 +56,17 @@ public class HttpServer extends UntypedActor {
 	}
 	
 	private void send(SwarmHttpResponse response) {
+		try {
+		log.info("response: {}", response);
+		log.info("length: {}", response.getContentLength());
+		log.info("version {}", response.getHttpVersion());
 		ChannelHandlerContext ctx = channelMapper.removeChannel(response.getRequestId());
 		if (ctx != null && ctx.channel().isActive()) {
             ctx.writeAndFlush(response).syncUninterruptibly();
         }
+		} catch (Throwable t) {
+			log.error("{}", t);
+			t.printStackTrace();
+		}
 	}
 }
