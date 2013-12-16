@@ -13,7 +13,8 @@ public class SwarmHttpRequest extends BaseHttpMessage implements HttpRequest, Se
     private String uri;
     private String method;
     private Map<String, String[]> parameters = new HashMap<>();
-
+    private Map<String, Object> attributes = new HashMap<>();
+    
     public SwarmHttpRequest setUri(String uri) {
         this.uri = uri;
         return this;
@@ -71,6 +72,24 @@ public class SwarmHttpRequest extends BaseHttpMessage implements HttpRequest, Se
         return this;
     }
     
+
+
+	public Object getAttribute(String name) {
+		return attributes.get(name);
+	}
+
+	public Enumeration<String> getAttributeNames() {
+		return Collections.enumeration(attributes.keySet());
+	}
+	
+	public void setAttribute(String name, Object o) {
+		attributes.put(name, o);
+	}
+	
+	public void removeAttribute(String name) {
+		attributes.remove(name);
+	}
+
     @Override
     public String toString() {
         return "SwarmHttpRequest{" +

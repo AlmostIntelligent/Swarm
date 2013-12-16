@@ -205,6 +205,7 @@ echo.
     -Dswarm.log.dir="%SWARM_LOG_DIR%" ^
     -Dswarm.conf.dir="%SWARM_CONFIG_DIR%" ^
 	-Djava.util.logging.config.file="%SWARM_CONFIG_DIR%\logging.properties" ^
+	-Xbootclasspath/a:%UNQUOTED_SWARM_HOME%\jboss-modules.jar ^
     -jar "%UNQUOTED_SWARM_HOME%\jboss-modules.jar" ^
     -mp "%SWARM_MODULEPATH%" ^
      org.gethydrated.swarm.launcher ^

@@ -6,6 +6,7 @@ import javax.servlet.http.*;
 import org.gethydrated.swarm.core.messages.http.SwarmHttpRequest;
 import org.gethydrated.swarm.core.messages.session.SessionObject;
 import org.gethydrated.swarm.core.servlets.container.ApplicationContext;
+import org.gethydrated.swarm.core.servlets.container.ApplicationRequestDispatcher;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -219,12 +220,12 @@ public class SwarmServletRequestWrapper implements HttpServletRequest, Serializa
 
     @Override
     public Object getAttribute(String name) {
-        return null;
+        return request.getAttribute(name);
     }
 
     @Override
     public Enumeration<String> getAttributeNames() {
-        return null;
+        return request.getAttributeNames();
     }
 
     @Override
@@ -314,12 +315,12 @@ public class SwarmServletRequestWrapper implements HttpServletRequest, Serializa
 
     @Override
     public void setAttribute(String name, Object o) {
-
+    	request.setAttribute(name, o);
     }
 
     @Override
     public void removeAttribute(String name) {
-
+    	request.removeAttribute(name);
     }
 
     @Override
@@ -340,7 +341,8 @@ public class SwarmServletRequestWrapper implements HttpServletRequest, Serializa
 
     @Override
     public RequestDispatcher getRequestDispatcher(String path) {
-        return null;
+        System.out.println("requestdispatcher for: "+ path);
+    	return new ApplicationRequestDispatcher();
     }
 
     @Override

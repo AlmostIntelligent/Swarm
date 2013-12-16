@@ -427,7 +427,7 @@ public class ApplicationContext implements LifecycleAware, ServletContext, Seria
 
     @Override
     public Enumeration<String> getInitParameterNames() {
-        return null;
+        return Collections.emptyEnumeration();
     }
 
     @Override

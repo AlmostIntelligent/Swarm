@@ -1,6 +1,7 @@
 package org.gethydrated.swarm.core.servlets;
 
 import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
@@ -124,11 +125,16 @@ public class WebAppScanner extends UntypedActor {
             deploy.visit(visitor);
             for (VirtualFile f : visitor.getMatched()) {
                 Closeable handle = null;
+                File real = f.getPhysicalFile();
                 if (!f.isDirectory()) {
                     handle = VFS.mountZip(f, f, provider);
                 }
                 if (f.getChild("WEB-INF/web.xml").exists()); {
                     copyWebapp(f);
+                    System.out.println(real);
+                    if(!real.delete()) {
+                    	logger.error("Could not delete " + real);
+                    }
                 }
                 if (handle != null) {
                     handle.close();
@@ -151,7 +157,6 @@ public class WebAppScanner extends UntypedActor {
             idDir = targetDir.getChild(id.toString());
         }
         VFSUtils.recursiveCopy(file, idDir);
-        VFSUtils.recursiveDelete(file);
         idDir.getChild("deploy").getPhysicalFile().createNewFile();
 	}
 

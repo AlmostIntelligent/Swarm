@@ -14,5 +14,7 @@
         <module name="org.gethydrated.swarm.servlets" export="true"/>
         <module name="org.glassfish.web.servletjsp" export="true"/>
         <module name="org.glassfish.el" export="true"/>
+        <module name="javax.api" export="true"/>
+        <module name="org.jboss.jboss-vfs" export="true"/>
     </dependencies>
 </module>

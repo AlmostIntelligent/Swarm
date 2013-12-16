@@ -78,7 +78,7 @@ public class VFSResourceLoader extends AbstractResourceLoader {
 
     @Override
     public Resource getResource(String name) {
-        logger.info("path: {} root: {}", name, root);
+        logger.trace("path: {} root: {}", name, root);
         final VirtualFile file = root.getChild(PathUtils.canonicalize(name));
         if (!file.exists()) {
             return null;

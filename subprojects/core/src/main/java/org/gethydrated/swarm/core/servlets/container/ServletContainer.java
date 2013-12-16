@@ -6,6 +6,7 @@ import java.util.Enumeration;
 import javax.servlet.Servlet;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.gethydrated.swarm.core.messages.container.Invoke;
 import org.gethydrated.swarm.core.messages.container.Invoke.InvokeServlet;
