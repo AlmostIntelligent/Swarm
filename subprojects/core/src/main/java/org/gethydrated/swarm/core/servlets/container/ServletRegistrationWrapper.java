@@ -22,6 +22,7 @@ public class ServletRegistrationWrapper implements Dynamic, Serializable {
 	 * 
 	 */
 	private static final long serialVersionUID = -4055863902113082131L;
+	@SuppressWarnings("unused")
 	private int loadOnStartup = 0;
 	private String servletClass;
 	private Servlet servletInstance;
@@ -71,11 +72,9 @@ public class ServletRegistrationWrapper implements Dynamic, Serializable {
     	}
     	Set<String> conflicts = new HashSet<>();
     	for (String s : urlPatterns) {
-    		try {
-    			ctx.mapServlet(s);
-    			conflicts.add(s);
-    		} catch (RuntimeException e) {
-    		}
+			if (ctx.hasServletMapping(s)) {
+				conflicts.add(s);
+			}
     	}
     	if (conflicts.isEmpty()) {
     		for (String s : urlPatterns) {

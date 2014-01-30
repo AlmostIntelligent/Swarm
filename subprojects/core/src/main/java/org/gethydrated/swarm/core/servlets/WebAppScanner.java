@@ -3,6 +3,8 @@ package org.gethydrated.swarm.core.servlets;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
@@ -11,7 +13,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.jboss.vfs.TempFileProvider;
 import org.jboss.vfs.VFS;
-import org.jboss.vfs.VFSUtils;
 import org.jboss.vfs.VirtualFile;
 import org.jboss.vfs.VirtualFileFilter;
 import org.jboss.vfs.VisitorAttributes;
@@ -121,17 +122,17 @@ public class WebAppScanner extends UntypedActor {
                 return (file.isDirectory() || file.getName().endsWith(".war"));
             }
         }, VisitorAttributes.DEFAULT);
+        Closeable handle = null;
         try {
             deploy.visit(visitor);
             for (VirtualFile f : visitor.getMatched()) {
-                Closeable handle = null;
+            	handle = null;
                 File real = f.getPhysicalFile();
                 if (!f.isDirectory()) {
                     handle = VFS.mountZip(f, f, provider);
                 }
                 if (f.getChild("WEB-INF/web.xml").exists()); {
-                    copyWebapp(f);
-                    System.out.println(real);
+                    copyWebapp(f, real);
                     if(!real.delete()) {
                     	logger.error("Could not delete " + real);
                     }
@@ -142,11 +143,23 @@ public class WebAppScanner extends UntypedActor {
             }
         } catch (IOException e) {
             logger.warning("Error: {}", e.getMessage());
+        } finally {
+        	if (handle != null) {
+        		try {
+					handle.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+        	}
         }
 	}
 
-	private void copyWebapp(VirtualFile file) throws IOException {
-        VirtualFile targetDir = webapps.getChild(file.getName());
+	private void copyWebapp(VirtualFile f, File real) throws IOException {
+		String name = f.getName();
+		if (name.endsWith(".war")) {
+			name = name.substring(0, name.length()-4);
+		}
+        VirtualFile targetDir = webapps.getChild(name);
         if (!targetDir.exists()) {
             targetDir.getPhysicalFile().mkdir();
         }
@@ -156,7 +169,7 @@ public class WebAppScanner extends UntypedActor {
             id = UUID.randomUUID();
             idDir = targetDir.getChild(id.toString());
         }
-        VFSUtils.recursiveCopy(file, idDir);
+        Files.copy(real.toPath(), idDir.getChild(f.getName()).getPhysicalFile().toPath(), StandardCopyOption.REPLACE_EXISTING);
         idDir.getChild("deploy").getPhysicalFile().createNewFile();
 	}
 

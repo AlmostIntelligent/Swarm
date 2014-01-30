@@ -15,5 +15,6 @@
                 <module name="javax.api"/>
                 <module name="org.glassfish.el"/>
                 <module name="org.gethydrated.swarm.spec"/>
+                <module name="org.gethydrated.swarm.util-scan"/>
     </dependencies>
 </module>

@@ -17,9 +17,12 @@ import akka.actor.Cancellable;
 import akka.actor.UntypedActor;
 import akka.contrib.pattern.DistributedPubSubExtension;
 import akka.contrib.pattern.DistributedPubSubMediator;
+import akka.event.Logging;
+import akka.event.LoggingAdapter;
 
 public class SessionBackup extends UntypedActor {
 
+	private LoggingAdapter logger = Logging.getLogger(getContext().system(), this);
 	private final Map<String, SessionObject> sessions = new HashMap<>();
 	private ActorRef mediator;
 	private Cancellable timertask;

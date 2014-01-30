@@ -9,6 +9,7 @@ import org.jboss.modules.ModuleSpec;
 import org.jboss.modules.ModuleSpec.Builder;
 import org.jboss.modules.ResourceLoader;
 import org.jboss.modules.ResourceLoaderSpec;
+import org.jboss.modules.filter.ClassFilters;
 import org.jboss.modules.filter.PathFilters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,6 +62,8 @@ public class DeploymentModuleLoader extends ModuleLoader {
         }
         spec.addDependency(DependencySpec.createLocalDependencySpec(PathFilters.acceptAll(), PathFilters.acceptAll()));
         spec.addDependency(DependencySpec.createModuleDependencySpec(PathFilters.acceptAll(), ModuleIdentifier.fromString("org.gethydrated.swarm.spec"), false));
+        spec.addDependency(DependencySpec.createModuleDependencySpec(PathFilters.acceptAll(), PathFilters.acceptAll(), PathFilters.acceptAll(), 
+        		PathFilters.acceptAll(), ClassFilters.acceptAll(), ClassFilters.acceptAll(), parentLoader, ModuleIdentifier.fromString("org.glassfish.web.servletjsp"), false));
         return spec.create();
     }
 

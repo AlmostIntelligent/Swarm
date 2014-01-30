@@ -36,7 +36,7 @@ public abstract class AbstractContainer extends UntypedActor implements Containe
 	}
 	
 	@Override
-    public final void init() {
+    public final void init() throws Exception {
         if (state == LifecycleState.CREATED) {
             setState(LifecycleState.INIT);
             try {
@@ -44,8 +44,8 @@ public abstract class AbstractContainer extends UntypedActor implements Containe
                 setState(LifecycleState.RUNNING);
             } catch (Throwable t) {
                 setState(LifecycleState.FAILED);
-                getLogger().warning("Error: {}", t);
-                t.printStackTrace();
+                getLogger().error("Error: {}", t);
+                throw t;
             }
         } else {
             throw new IllegalStateException("Context already initialized.");
@@ -53,13 +53,12 @@ public abstract class AbstractContainer extends UntypedActor implements Containe
     }
 	
 	@Override
-    public final void destroy() {
+    public final void destroy() throws Exception {
         if (state == LifecycleState.RUNNING || state == LifecycleState.FAILED) {
             setState(LifecycleState.DESTROY);
             try {
                 doDestroy();
             } catch (Throwable t) {
-                //TODO: handle error correctly
                 throw new RuntimeException(t);
             } finally {
                 setState(LifecycleState.STOPPED);
@@ -89,7 +88,7 @@ public abstract class AbstractContainer extends UntypedActor implements Containe
     
     @Override
     public void preStart() throws Exception {
-    	init();
+		init();
     }
     
     @Override

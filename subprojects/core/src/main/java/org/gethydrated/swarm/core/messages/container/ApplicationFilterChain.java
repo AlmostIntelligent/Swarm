@@ -10,10 +10,8 @@ import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.gethydrated.swarm.core.messages.container.Invoke.InvokationResult;
+import org.gethydrated.swarm.core.messages.http.SwarmHttpRequest;
 import org.gethydrated.swarm.core.messages.http.SwarmHttpResponse;
 import org.gethydrated.swarm.core.servlets.connector.SwarmServletRequestWrapper;
 import org.gethydrated.swarm.core.servlets.connector.SwarmServletResponseWrapper;
@@ -35,12 +33,12 @@ public class ApplicationFilterChain implements FilterChain, Serializable {
 	private static final long serialVersionUID = 178937646373482651L;
 	private final ActorRef servlet;
 	private final ActorRef source;
-	private SwarmServletRequestWrapper request;
-	private SwarmServletResponseWrapper response;
+	private SwarmHttpRequest request;
+	private SwarmHttpResponse response;
     private final LinkedList<FilterFacade> filters;
 	private transient ApplicationContext ctx;
 
-    public ApplicationFilterChain(SwarmServletRequestWrapper request, SwarmServletResponseWrapper response, ActorRef servlet, ActorRef source) {
+    public ApplicationFilterChain(SwarmHttpRequest request, SwarmHttpResponse response, ActorRef servlet, ActorRef source) {
         this.servlet = servlet;
         this.source = source;
         this.request = request;
@@ -55,22 +53,26 @@ public class ApplicationFilterChain implements FilterChain, Serializable {
 	@Override
 	public void doFilter(ServletRequest request, ServletResponse response)
 			throws IOException, ServletException {
+		doFilter(((SwarmServletRequestWrapper) request).unwrap(), ((SwarmServletResponseWrapper) response).unwrap());
+	}
+	
+	public void doFilter(SwarmHttpRequest request, SwarmHttpResponse response)
+			throws IOException, ServletException {
 		FilterFacade fc = filters.poll();
 		if (fc != null) {
-			fc.invoke(request, response, ctx, this);
+			fc.invoke(new SwarmServletRequestWrapper(request, ctx), new SwarmServletResponseWrapper(response, ctx), ctx, this);
 		} else {
 			if (servlet != null) {
-				Timeout t = new Timeout(Duration.create(5, TimeUnit.SECONDS));
-				Future<?> f = ask(servlet, new Invoke.InvokeServlet((HttpServletRequest)request, (HttpServletResponse)response), t);
+				Timeout t = new Timeout(Duration.create(15, TimeUnit.SECONDS));
+				Future<?> f = ask(servlet, new Invoke.InvokeServlet(request, response), t);
 				try {
 					Invoke.InvokationResult res = (InvokationResult) Await.result(f, t.duration());
 					response = res.response;
 				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					throw new ServletException(e);
 				}
 			} else {
-				ctx.getLogger().warning("servlet is null for {}", ((SwarmServletRequestWrapper)request).getRequestURL());
+				ctx.getLogger().warning("servlet is null for {}", request.getURL());
 			}
 		}
 	}
@@ -90,7 +92,11 @@ public class ApplicationFilterChain implements FilterChain, Serializable {
 	}
 
 	public SwarmHttpResponse response() {
-		return response.unwrap();
+		return response;
+	}
+	
+	public SwarmHttpRequest request() {
+		return request;
 	}
 
 	public ActorRef source() {

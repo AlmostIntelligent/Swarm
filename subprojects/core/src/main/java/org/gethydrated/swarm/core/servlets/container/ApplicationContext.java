@@ -1,12 +1,12 @@
 package org.gethydrated.swarm.core.servlets.container;
 
+import org.gethydrated.swarm.core.mapping.Mapper;
+import org.gethydrated.swarm.core.mapping.MappingInfo;
 import org.gethydrated.swarm.core.messages.container.ApplicationFilterChain;
 import org.gethydrated.swarm.core.messages.http.SwarmHttpRequest;
 import org.gethydrated.swarm.core.messages.http.SwarmHttpResponse;
 import org.gethydrated.swarm.core.messages.session.SessionObject;
 import org.gethydrated.swarm.core.messages.session.SessionRequest;
-import org.gethydrated.swarm.core.servlets.connector.SwarmServletRequestWrapper;
-import org.gethydrated.swarm.core.servlets.connector.SwarmServletResponseWrapper;
 import org.gethydrated.swarm.core.servlets.modules.DeploymentModuleLoader;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
@@ -15,17 +15,13 @@ import org.jboss.vfs.VirtualFile;
 import org.jboss.vfs.VisitorAttributes;
 import org.jboss.vfs.util.FilterVirtualFileVisitor;
 import org.jboss.vfs.util.MatchAllVirtualFileFilter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import scala.concurrent.Await;
 import scala.concurrent.Future;
 import scala.concurrent.duration.Duration;
-import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
 import akka.actor.ActorSystem;
-import akka.cluster.Cluster;
 import akka.event.LoggingAdapter;
 import akka.pattern.Patterns;
 import akka.util.Timeout;
@@ -35,8 +31,6 @@ import javax.servlet.ServletRegistration.Dynamic;
 import javax.servlet.descriptor.JspConfigDescriptor;
 import javax.servlet.descriptor.JspPropertyGroupDescriptor;
 import javax.servlet.descriptor.TaglibDescriptor;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,8 +41,6 @@ import java.net.URLClassLoader;
 import java.net.URLConnection;
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.regex.Pattern;
-
 /**
  *
  */
@@ -67,8 +59,6 @@ public class ApplicationContext implements LifecycleAware, ServletContext, Seria
 
     private final Map<String, ServletContainerFacade> servlets = new HashMap<>();
     
-    private final Map<String, String> servletMappings = new HashMap<>();
-    
     private final Map<String, FilterContainer> filters = new HashMap<>();
 
     private final LinkedList<FilterMapping> filterMappings = new LinkedList<>();
@@ -76,11 +66,11 @@ public class ApplicationContext implements LifecycleAware, ServletContext, Seria
     private final Map<String, Object> attributes = new HashMap<>();
 
     private final Set<TaglibDescriptor> taglibs = new HashSet<>();
+    
+    private final List<EventListener> listeners = new LinkedList<>();
+    
+    private final Mapper servletMappings;
 
-    //will be done by hydra later on
-    //private final SessionService sessionService = new SessionService();
-
-    private ModuleLoader contextLoader;
     private Module module;
     private VirtualFile root;
     private Set<String> welcomeFiles = new HashSet<>();
@@ -88,8 +78,7 @@ public class ApplicationContext implements LifecycleAware, ServletContext, Seria
     private final String ctxName;
 
 	private ActorSystem actorsystem;
-	private ActorContext rootContext;
-	private ActorRef rootRef;
+
 
 	private LifecycleState state = LifecycleState.CREATED;
     
@@ -99,25 +88,23 @@ public class ApplicationContext implements LifecycleAware, ServletContext, Seria
 
     public ApplicationContext(String name) {
     	ctxName = name;
-        contextLoader = new DeploymentModuleLoader(Module.getBootModuleLoader());
         welcomeFiles.add("index.html");
         welcomeFiles.add("index.jsp");
+        servletMappings = new Mapper(name);
     }
 
     public void addServletMapping(String name, String mapping) {
-        servletMappings.put(mapping, name);
+        servletMappings.addMapping(mapping, name);
     }
 
-    public Set<String> getServletMapping(String name) {
-        Set<String> mappings = new HashSet<>();
-        for (Entry<String, String> e : servletMappings.entrySet()) {
-            if (name.equals(e.getValue())) {
-                mappings.add(e.getKey());
-            }
-        }
-        return mappings;
+    public Set<String> getServletMapping(String mapping) {
+    	return servletMappings.getMappings(mapping);
     }
 
+	public boolean hasServletMapping(String path) {
+		return servletMappings.containsMapping(path);
+	}
+    
     public void addFilterMappingUrl(EnumSet<DispatcherType> dispatcherTypes, boolean matchAfter, String[] urlPatterns, FilterContainer container) {
         FilterMapping fm = new FilterMapping(dispatcherTypes, urlPatterns, container);
         if (matchAfter) {
@@ -127,46 +114,11 @@ public class ApplicationContext implements LifecycleAware, ServletContext, Seria
         }
     }
 
-    public String mapServlet(String request) {
-        String matchedPath = null;
-        String matchedType = null;
-        for (Entry<String, String> e : servletMappings.entrySet()) {
-            Pattern p = Pattern.compile(e.getKey().replaceAll("\\.", "\\\\.").replaceAll("\\*", ".*"));
-            if (p.matcher(request.substring(ctxName.length()+1)).matches()) {
-                if (e.getKey().endsWith("*")) {
-                    if (matchedPath == null) {
-                        matchedPath = e.getKey();
-                    } else {
-                        if (matchedPath.length() < e.getKey().length()) {
-                            matchedPath = e.getKey();
-                        }
-                    }
-                } else if (e.getKey().startsWith("*.")) {
-                    matchedType = e.getKey();
-                } else {
-                    return e.getKey();
-                }
-            //retry wildcards as directory mapping
-            } else if (e.getKey().endsWith("*") && p.matcher(request+"/").matches()) {
-                if (matchedPath == null) {
-                    matchedPath = e.getKey();
-                } else {
-                    if (matchedPath.length() < e.getKey().length()) {
-                        matchedPath = e.getKey();
-                    }
-                }
-            }
-        }
-        logger.info("Matching: path {}, type {}", matchedPath, matchedType);
-        if (matchedPath == null && matchedType == null) {
-            String def = servletMappings.get("/");
-            if (def == null) {
-                throw new RuntimeException("no match");
-            }
-            return "/";
-        }
-
-        return (matchedPath != null) ? matchedPath : matchedType;
+    public MappingInfo mapServlet(String request) {
+    	getLogger().info("Matching: path {}", request);
+    	MappingInfo info = new MappingInfo();
+    	servletMappings.map(request, info);
+    	return info;
     }
 
     private List<FilterFacade> mapFilters(String request, String servlet) {
@@ -185,32 +137,38 @@ public class ApplicationContext implements LifecycleAware, ServletContext, Seria
         this.root = root;
     }
 
-    public void setModuleLoader(ModuleLoader contextLoader) {
-        this.contextLoader = contextLoader;
+    public void setModuleLoader(ModuleLoader contextLoader) throws Exception {
+        module = contextLoader.loadModule(ModuleIdentifier.fromString(DeploymentModuleLoader.MODULE_PREFIX + getName()));
     }
 
     public VirtualFile getResourceAsFile(String path) {
         return root.getChild(path);
     }
-
-    public ApplicationFilterChain createFilterChain(SwarmHttpRequest request, SwarmHttpResponse response, ActorRef source) {
-        response.setHttpVersion(request.getHttpVersion());
-        response.setRequestId(request.getRequestId());
-        SwarmServletRequestWrapper requestWrapper = new SwarmServletRequestWrapper(request);
-        SwarmServletResponseWrapper responseWrapper = new SwarmServletResponseWrapper(response);
-        return createFilterChain(requestWrapper, responseWrapper, source);
-    }
     
-    public ApplicationFilterChain createFilterChain(SwarmServletRequestWrapper request, SwarmServletResponseWrapper response, ActorRef source) {
-    	String matched = mapServlet(request.getRequestURI());
-    	String name = servletMappings.get(matched);
-        ServletContainerFacade container = servlets.get(name);
-        logger.info("matched {}", matched);
-        logger.info("matched container {}", container.getName());
-        request.setServletPath(matched);
-        ApplicationFilterChain chain = new ApplicationFilterChain(request, response, container.ref(), source);
-        chain.addFilters(mapFilters(request.getRequestURI(), matched));
-    	return chain;
+    public ApplicationFilterChain createFilterChain(SwarmHttpRequest request, SwarmHttpResponse response, ActorRef source) throws IOException {
+    	MappingInfo matched = mapServlet(request.getRequestURI());
+    	if (matched.servletName != null) {
+	    	String name = matched.servletName;
+	        ServletContainerFacade container = servlets.get(name);
+	        logger.info("matched {}", matched);
+	        logger.info("matched container {}", container.getName());
+	        request.setServletPath(matched.servletPath);
+	        request.setPathInfo(matched.pathInfo);
+	        request.setContextPath(matched.contextPath);
+	        ApplicationFilterChain chain = new ApplicationFilterChain(request, response, container.ref(), source);
+	        chain.addFilters(mapFilters(request.getRequestURI(), matched.servletName));
+	    	return chain;
+    	} else if (matched.redirect != null) {
+    		response.setStatus(302);
+        	response.addHeaders("Location", request.getRequestURL().append(matched.redirect).toString());
+    		return null;
+    	} else {
+    		response.setStatus(404);
+        	response.setContentType("text/plain");
+        	response.getWriter().println("The page you are looking for does not exist. Error 404.");
+        	response.flushBuffer();
+    		return null;
+    	}
     }
 
     public SessionObject getSessionObject(boolean create) {
@@ -265,11 +223,19 @@ public class ApplicationContext implements LifecycleAware, ServletContext, Seria
 	public void init() {
 		if (state == LifecycleState.CREATED) {
 			state = LifecycleState.INIT;
+			ClassLoader c1 = Thread.currentThread().getContextClassLoader();
 			try {
-				module = contextLoader.loadModule(ModuleIdentifier.fromString(DeploymentModuleLoader.MODULE_PREFIX + getName()));
+				Thread.currentThread().setContextClassLoader(this.getClassLoader());
+				for (EventListener l : listeners) {
+					if (l instanceof ServletContextListener) {
+						((ServletContextListener) l).contextInitialized(new ServletContextEvent(this));
+					}
+				}
 			} catch (Throwable t) {
 				getLogger().error(t, "Failed to initialize context '{}'", ctxName);
 				state = LifecycleState.FAILED;
+			} finally {
+				Thread.currentThread().setContextClassLoader(c1);
 			}
 		}
 	}
@@ -278,13 +244,20 @@ public class ApplicationContext implements LifecycleAware, ServletContext, Seria
 	public void destroy() {
 		if (state == LifecycleState.RUNNING || state == LifecycleState.FAILED) {
 			state = LifecycleState.DESTROY;
+			ClassLoader c1 = Thread.currentThread().getContextClassLoader();
 			try {
-				
+				Thread.currentThread().setContextClassLoader(this.getClassLoader());
+				for (EventListener l : listeners) {
+					if (l instanceof ServletContextListener) {
+						((ServletContextListener) l).contextDestroyed(new ServletContextEvent(this));
+					}
+				}
 			} catch (Throwable t) {
 				getLogger().error(t, "Failed to destroy context '{}'", ctxName);
 			} finally {
 				state = LifecycleState.STOPPED;
-			}
+				Thread.currentThread().setContextClassLoader(c1);
+			} 
 		}
 	}
 
@@ -358,26 +331,28 @@ public class ApplicationContext implements LifecycleAware, ServletContext, Seria
 
     @Override
     public URL getResource(String path) throws MalformedURLException {
-        logger.info(path);
         return module.getClassLoader().getResource(path);
     }
 
     @Override
     public InputStream getResourceAsStream(String path) {
-        logger.info(path);
         InputStream s =module.getClassLoader().findResourceAsStream(path, false);
-        logger.info("{}", s);
         return s;
     }
 
     @Override
     public RequestDispatcher getRequestDispatcher(String path) {
-        return null;
+    	System.out.println("requestdispatcher for: "+ path);
+    	MappingInfo info = new MappingInfo();
+    	servletMappings.mapInternal("/" + ctxName + path, info);
+    	System.out.println("found: " + info.servletName);
+    	return (info.isEmpty()) ? null : new ApplicationRequestDispatcher(this, servlets.get(info.servletName), info);
     }
 
     @Override
     public RequestDispatcher getNamedDispatcher(String name) {
-        return null;
+    	ServletContainerFacade f = servlets.get(name);
+        return (f != null) ? new ApplicationRequestDispatcher(this, f, new MappingInfo()) : null;
     }
 
     @Override
@@ -432,11 +407,13 @@ public class ApplicationContext implements LifecycleAware, ServletContext, Seria
 
     @Override
     public boolean setInitParameter(String name, String value) {
+    	System.out.println("INIT:" + name + " " + value);
         return false;
-    }
+     }
 
     @Override
     public Object getAttribute(String name) {
+    	System.out.println("GET ATTRIB: " + name);
         return attributes.get(name);
     }
 
@@ -447,6 +424,7 @@ public class ApplicationContext implements LifecycleAware, ServletContext, Seria
 
     @Override
     public void setAttribute(String name, Object object) {
+    	System.out.println("ADD ATTRIB: " + name + " " + ((object != null) ? object.getClass().getCanonicalName() : ""));
         if (object == null) {
             removeAttribute(name);
         } else {
@@ -610,16 +588,32 @@ public class ApplicationContext implements LifecycleAware, ServletContext, Seria
     @Override
     public void addListener(String className) {
         logger.warning("adding listener {}",className);
+        try {
+			addListener((EventListener) getClassLoader().loadClass(className).newInstance());
+		} catch (InstantiationException | IllegalAccessException
+				| ClassNotFoundException e) {
+			e.printStackTrace();
+		}
     }
 
     @Override
     public <T extends EventListener> void addListener(T t) {
         logger.warning("adding listener {}",t);
+        listeners.add(t);
     }
 
     @Override
     public void addListener(Class<? extends EventListener> listenerClass) {
         logger.warning("adding listener {}",listenerClass);
+        try {
+			addListener(listenerClass.newInstance());
+		} catch (InstantiationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
 
     @Override
@@ -630,7 +624,6 @@ public class ApplicationContext implements LifecycleAware, ServletContext, Seria
 
     @Override
     public JspConfigDescriptor getJspConfigDescriptor() {
-        System.out.println(taglibs);
         return new JspConfigDescriptor() {
             @Override
             public Collection<TaglibDescriptor> getTaglibs() {
@@ -689,14 +682,6 @@ public class ApplicationContext implements LifecycleAware, ServletContext, Seria
 	public void setActorSystem(ActorSystem system) {
 		this.actorsystem = system;
 	}
-
-	public void setRootContext(ActorContext ctx) {
-		rootContext = ctx;
-	}
-	
-	public void setRootRef(ActorRef ref) {
-		rootRef = ref;
-	}
 	
 	public void setLogger(LoggingAdapter logger) {
 		this.logger = logger;
@@ -717,4 +702,5 @@ public class ApplicationContext implements LifecycleAware, ServletContext, Seria
 	public ServletContainerFacade getServletFacade(String name) {
 		return servlets.get(name);
 	}
+
 }

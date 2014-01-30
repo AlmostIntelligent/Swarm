@@ -2,8 +2,8 @@ package org.gethydrated.swarm.core.messages.container;
 
 import java.io.Serializable;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import org.gethydrated.swarm.core.messages.http.SwarmHttpRequest;
+import org.gethydrated.swarm.core.messages.http.SwarmHttpResponse;
 
 public class Invoke implements Serializable {
 
@@ -12,15 +12,15 @@ public class Invoke implements Serializable {
 	 */
 	private static final long serialVersionUID = -4077560303732615954L;
 
-	protected HttpServletRequest request;
+	protected SwarmHttpRequest request;
 	
-	protected HttpServletResponse response;
+	protected SwarmHttpResponse response;
 	
-	public HttpServletRequest request() {
+	public SwarmHttpRequest request() {
 		return request;
 	}
 	
-	public HttpServletResponse response() {
+	public SwarmHttpResponse response() {
 		return response;
 	}
 	
@@ -31,8 +31,8 @@ public class Invoke implements Serializable {
 		 */
 		private static final long serialVersionUID = -419221254233885152L;
 
-		public InvokeServlet(HttpServletRequest request,
-				HttpServletResponse response) {
+		public InvokeServlet(SwarmHttpRequest request,
+				SwarmHttpResponse response) {
 			this.request = request;
 			this.response = response;
 		}
@@ -46,7 +46,7 @@ public class Invoke implements Serializable {
 		 */
 		private static final long serialVersionUID = -3459462063291445626L;
 		
-		public InvokationResult(HttpServletRequest request, HttpServletResponse response) {
+		public InvokationResult(SwarmHttpRequest request, SwarmHttpResponse response) {
 			this.request = request;
 			this.response = response;
 		}

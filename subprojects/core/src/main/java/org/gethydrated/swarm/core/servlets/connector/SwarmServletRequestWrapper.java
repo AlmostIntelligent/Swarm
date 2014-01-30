@@ -6,11 +6,8 @@ import javax.servlet.http.*;
 import org.gethydrated.swarm.core.messages.http.SwarmHttpRequest;
 import org.gethydrated.swarm.core.messages.session.SessionObject;
 import org.gethydrated.swarm.core.servlets.container.ApplicationContext;
-import org.gethydrated.swarm.core.servlets.container.ApplicationRequestDispatcher;
-
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.security.Principal;
 import java.util.*;
@@ -18,24 +15,16 @@ import java.util.*;
 /**
  *
  */
-public class SwarmServletRequestWrapper implements HttpServletRequest, Serializable {
+public class SwarmServletRequestWrapper implements HttpServletRequest {
 
-    /**
-	 * 
-	 */
-	private static final long serialVersionUID = 7735078989138094249L;
-
-	private transient ApplicationContext context;
+	private final ApplicationContext context;
 
     private final SwarmHttpRequest request;
-    private String servletPath = "";
 
-    public SwarmServletRequestWrapper(SwarmHttpRequest request) {
+    public SwarmServletRequestWrapper(SwarmHttpRequest request, ApplicationContext ctx) {
         this.request = request;
-    }
-
-    public void setServletPath(String servletPath) {
-        this.servletPath = servletPath;
+        this.context = ctx;
+        request.deserialize(ctx);
     }
 
     @Override
@@ -80,8 +69,7 @@ public class SwarmServletRequestWrapper implements HttpServletRequest, Serializa
 
     @Override
     public String getPathInfo() {
-        String s = request.getUri().replace(getContextPath(), "").replace(getServletPath(), "");
-        return s.equals("") ? null : s;
+        return request.getPathInfo();
     }
 
     @Override
@@ -91,7 +79,7 @@ public class SwarmServletRequestWrapper implements HttpServletRequest, Serializa
 
     @Override
     public String getContextPath() {
-        return context.getContextPath();
+        return request.getContextPath();
     }
 
     @Override
@@ -121,34 +109,17 @@ public class SwarmServletRequestWrapper implements HttpServletRequest, Serializa
 
     @Override
     public String getRequestURI() {
-        String uri = request.getUri();
-        int i = uri.indexOf("?");
-        if (i > 0) {
-            uri = uri.substring(0, i);
-        }
-        return uri;
+        return request.getRequestURI();
     }
 
     @Override
     public StringBuffer getRequestURL() {
-        StringBuffer buffer = new StringBuffer();
-        buffer.append("http://");
-        buffer.append(getServerName());
-        buffer.append(getRequestURI());
-        return buffer;
+        return request.getRequestURL();
     }
 
     @Override
     public String getServletPath() {
-        if (servletPath.endsWith("/*")) {
-            return servletPath.substring(0, servletPath.length()-2);
-        } else if (servletPath.endsWith("/")) {
-            return servletPath.substring(0, servletPath.length()-1);
-        } else if (servletPath.startsWith("*.")) {
-            return request.getUri().substring(context.getName().length()+1);
-        } else {
-            return servletPath;
-        }
+        return request.getServletPath();
     }
 
     @Override
@@ -341,8 +312,7 @@ public class SwarmServletRequestWrapper implements HttpServletRequest, Serializa
 
     @Override
     public RequestDispatcher getRequestDispatcher(String path) {
-        System.out.println("requestdispatcher for: "+ path);
-    	return new ApplicationRequestDispatcher();
+        return context.getRequestDispatcher(path);
     }
 
     @Override
@@ -402,14 +372,14 @@ public class SwarmServletRequestWrapper implements HttpServletRequest, Serializa
 
     @Override
     public DispatcherType getDispatcherType() {
-        return null;
+        return request.getDispatcherType();
     }
 
 	public ApplicationContext getContext() {
 		return context;
 	}
 
-	public void setContext(ApplicationContext context) {
-		this.context = context;
+	public SwarmHttpRequest unwrap() {
+		return request;
 	}
 }

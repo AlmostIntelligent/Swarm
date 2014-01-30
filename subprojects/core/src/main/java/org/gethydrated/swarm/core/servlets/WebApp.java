@@ -3,12 +3,13 @@ package org.gethydrated.swarm.core.servlets;
 import java.io.Closeable;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintStream;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import org.gethydrated.swarm.core.messages.container.ApplicationFilterChain;
 import org.gethydrated.swarm.core.messages.container.Beacon.WebAppBeacon;
 import org.gethydrated.swarm.core.messages.container.Beacon.StartBeacon;
-import org.gethydrated.swarm.core.messages.http.BaseHttpMessage;
 import org.gethydrated.swarm.core.messages.http.SwarmHttpRequest;
 import org.gethydrated.swarm.core.messages.http.SwarmHttpResponse;
 import org.gethydrated.swarm.core.servlets.container.AbstractContainer;
@@ -18,7 +19,6 @@ import org.gethydrated.swarm.core.servlets.container.FilterContainer;
 import org.gethydrated.swarm.core.servlets.container.FilterWorker;
 import org.gethydrated.swarm.core.servlets.container.LifecycleState;
 import org.gethydrated.swarm.core.servlets.container.ServletContainer;
-import org.gethydrated.swarm.core.servlets.container.ServletContainerFacade;
 import org.jboss.vfs.TempFileProvider;
 import org.jboss.vfs.VFS;
 import org.jboss.vfs.VirtualFile;
@@ -44,7 +44,6 @@ public class WebApp extends AbstractContainer {
     
 	public WebApp(String base, ActorRef parent) {
 		super(base, parent);
-		System.out.println(base);
 	}
 	
 	@Override
@@ -53,14 +52,20 @@ public class WebApp extends AbstractContainer {
 			mediator.tell(new DistributedPubSubMediator.Publish("webapp-discovery", new WebAppBeacon(ctxName)), self());
 		} else if (o instanceof SwarmHttpRequest && getState() == LifecycleState.RUNNING) {
 			getLogger().info("{}", o);
+			SwarmHttpRequest request = (SwarmHttpRequest) o;
 	        SwarmHttpResponse response = new SwarmHttpResponse();
-	        response.setRequestId(((BaseHttpMessage) o).getRequestId());
-	        response.setHttpVersion(((BaseHttpMessage) o).getHttpVersion());
+	        response.setRequestId(request.getRequestId());
+	        response.setHttpVersion(request.getHttpVersion());
 	        try {
-	        	ApplicationFilterChain chain = context.createFilterChain((SwarmHttpRequest) o, response, sender());
-	        	response.setStatus(200);
-	        	filters.tell(chain, self());
+	        	ApplicationFilterChain chain = context.createFilterChain(request, response, sender());
+	        	if (chain != null) {
+	        		response.setStatus(200);
+	        		filters.tell(chain, self());
+	        	} else {
+	        		sender().tell(response, self());
+	        	}
 	        } catch (RuntimeException e) {
+	        	e.printStackTrace();
 	        	response.setStatus(404);
 	        	response.setContentType("text/plain");
 	        	response.setContent("The page you are looking for does not exist. Error 404.");
@@ -73,6 +78,7 @@ public class WebApp extends AbstractContainer {
 
 	@Override
 	protected void doInit() throws Exception {
+		provider = TempFileProvider.create("tmp",Executors.newScheduledThreadPool(2));
 		VirtualFile file = VFS.getChild(getName());
 		ctxName = file.getParent().getName();
 		getLogger().info("{}", ctxName);
@@ -84,31 +90,42 @@ public class WebApp extends AbstractContainer {
         } else {
             throw new FileNotFoundException(ctxName);
         }
-		context = ApplicationContextFactory.create(handle);
-		context.setActorSystem(context().system());
-		context.setRootContext(getContext());
-		context.setRootRef(getSelf());
-		context.setLogger(getLogger());
-		context.init();
-		createFilters();
-		createServlets();
-		
-		
-		mediator = DistributedPubSubExtension.get(context().system()).mediator();
-		timertask = context().system().scheduler().schedule(new FiniteDuration(0, TimeUnit.SECONDS), new FiniteDuration(1, TimeUnit.SECONDS), 
-				self(), new StartBeacon(), context().system().dispatcher(), self());
+		try {
+			context = ApplicationContextFactory.create(ctxName, handle, getLogger());
+			context.setActorSystem(context().system());
+			context.setLogger(getLogger());
+			context.init();
+			createFilters();
+			createServlets();
+			
+			
+			mediator = DistributedPubSubExtension.get(context().system()).mediator();
+			timertask = context().system().scheduler().schedule(new FiniteDuration(0, TimeUnit.SECONDS), new FiniteDuration(1, TimeUnit.SECONDS), 
+					self(), new StartBeacon(), context().system().dispatcher(), self());
+		} catch (Throwable t) {
+			getLogger().error(t, "Could not start Web app '" + getName() + "'");
+			VirtualFile error = handle.getParent().getChild("error");
+			error.getPhysicalFile().createNewFile();
+			error.openStream();
+			PrintStream p = new PrintStream(error.getPhysicalFile());
+			t.printStackTrace(p);
+			p.close();
+			throw t;
+		}
 	}
 
 	@Override
 	protected void doDestroy() throws IOException {
 		destroyFilters();
 		destroyServlets();
+		context.destroy();
 		if (timertask != null) {
 			timertask.cancel();
 		}
 		if (vfsmount != null) {
 			vfsmount.close();
 		}
+		provider.close();
 	}
 	
 	private void createServlets() {

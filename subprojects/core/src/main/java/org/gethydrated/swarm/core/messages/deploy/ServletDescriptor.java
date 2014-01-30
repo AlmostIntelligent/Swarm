@@ -6,7 +6,7 @@ import java.util.Map;
 /**
  *
  */
-public class ServletDescriptor {
+public class ServletDescriptor implements Comparable<ServletDescriptor> {
     private int loadOnStartup;
     private String className;
     private String name;
@@ -53,6 +53,20 @@ public class ServletDescriptor {
                 ", params=" + params +
                 '}';
     }
+
+	@Override
+	public int compareTo(ServletDescriptor o) {
+		if (o.getLoadOnStartup() == 0 && this.getLoadOnStartup() == 0) {
+			return 0;
+		}
+		if (this.getLoadOnStartup() == 0) {
+			return 1;
+		}
+		if (o.getLoadOnStartup() == 0) {
+			return -1;
+		}
+		return Integer.compare(this.loadOnStartup, o.loadOnStartup);
+	}
 
 
 }

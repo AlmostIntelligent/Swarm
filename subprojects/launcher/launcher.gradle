@@ -12,6 +12,7 @@ dependencies {
 	compile libraries.akkalogger
 	compile project(":core")
     compile project(":servlets")
+    compile project(":util-scan")
 }
 
 jar {

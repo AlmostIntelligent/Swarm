@@ -7,6 +7,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -84,6 +86,18 @@ public class VFSResourceLoader extends AbstractResourceLoader {
             return null;
         }
         try {
+        	if (false) {
+        		try (FileReader f = new FileReader(file.getPhysicalFile())) {
+        			char[] chars = new char[(int) file.getPhysicalFile().length()];
+        		    f.read(chars);
+        		    System.out.println("---" + name + "---");
+        		    System.out.println(new String(chars));
+        		    System.out.println("------------------");
+        		} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+        	}
             return new VFSEntryResource(file.getPathNameRelativeTo(root), file, file.toURL());
         } catch (MalformedURLException e) {
             return null;

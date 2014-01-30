@@ -11,6 +11,7 @@
   <root level="debug">
     <appender-ref ref="STDOUT" />
   </root>
+  <logger name="org.gethydrated.swarm.core.servlets.modules.VFSResourceLoader" level="INFO"/>
   <logger name="akka.remote.EndpointWriter" level="OFF"/>
   <logger name="akka.remote" level="WARN"/>
   <logger name="akka" level="INFO"/>

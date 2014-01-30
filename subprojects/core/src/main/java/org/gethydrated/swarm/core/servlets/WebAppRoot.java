@@ -30,7 +30,7 @@ public class WebAppRoot extends UntypedActor {
 			undeploy((Undeploy) o);
 		} else if (o instanceof Terminated) {
 			webapps.values().removeAll(Collections.singleton(((Terminated) o).actor()));
-			System.out.println(o + " terminated");
+			logger.info("{} terminated", o);
 		} else {
 			unhandled(o);
 		}
@@ -53,7 +53,6 @@ public class WebAppRoot extends UntypedActor {
 			ActorRef ref = context().actorOf(Props.create(WebApp.class, base.getFile(), null), ctxName + "---" + id);
 			context().watch(ref);
 			webapps.put(base.getFile(), ref);
-			System.out.println(ref);
 		} else {
 			logger.warning("Webapp already deployed: {}", base.getFile());
 		}

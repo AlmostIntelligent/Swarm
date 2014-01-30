@@ -32,15 +32,16 @@ public class DefaultServlet extends HttpServlet {
         logger.info("{}", req.getContextPath());
         logger.info("{}", req.getRequestURI());
         logger.info("{}", req.getPathInfo());
-        if (req.getPathInfo() != null) {
+        logger.info("{}", req.getServletPath());
+        if (req.getServletPath() != null) {
             logger.info(req.getRequestURI());
 
-            VirtualFile file = ((ApplicationContext)req.getServletContext()).getResourceAsFile(req.getPathInfo());
+            VirtualFile file = ((ApplicationContext)req.getServletContext()).getResourceAsFile(req.getServletPath());
 
             logger.info("file: {}", file);
             
             if (file.isDirectory()) {
-                if (!req.getPathInfo().endsWith("/")) {
+                if (!req.getServletPath().endsWith("/")) {
                     resp.setStatus(HttpServletResponse.SC_FOUND);
                     resp.addHeader("Location", req.getRequestURL().append("/").toString());
                 } else {
@@ -62,10 +63,20 @@ public class DefaultServlet extends HttpServlet {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
+                } else {
+                	resp.setStatus(404);
+                	resp.setContentType("text/plain");
+                	try {
+						resp.getWriter().println("The page you are looking for does not exist. Error 404.");
+						resp.flushBuffer();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+                	
                 }
             }
         }
-        String mime = req.getServletContext().getMimeType(req.getPathInfo());
+        String mime = req.getServletContext().getMimeType(req.getServletPath());
         if (mime != null) {
             resp.setContentType(mime);
         }

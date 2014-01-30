@@ -24,5 +24,7 @@
         <module name="com.typesafe.config"/>
         <module name="com.google.protobuf.protobuf-java"/>
         <module name="ch.qos.logback.logback-core"/>
+<!--         <module name="javax.servlet.servlet-api"/> -->
+		<module name="org.gethydrated.swarm.util-scan"/>		
     </dependencies>
 </module>

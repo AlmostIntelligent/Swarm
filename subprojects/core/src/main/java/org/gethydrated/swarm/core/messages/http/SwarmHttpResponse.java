@@ -1,5 +1,6 @@
 package org.gethydrated.swarm.core.messages.http;
 
+import java.io.PrintStream;
 import java.io.Serializable;
 
 
@@ -72,4 +73,14 @@ public class SwarmHttpResponse extends BaseHttpMessage implements HttpResponse, 
                 ", status=" + status +
                 ", " + super.toString() + "}";
     }
+
+	public PrintStream getWriter() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public void flushBuffer() {
+		// TODO Auto-generated method stub
+		
+	}
 }

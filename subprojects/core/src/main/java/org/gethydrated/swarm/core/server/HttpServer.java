@@ -57,16 +57,12 @@ public class HttpServer extends UntypedActor {
 	
 	private void send(SwarmHttpResponse response) {
 		try {
-		log.info("response: {}", response);
-		log.info("length: {}", response.getContentLength());
-		log.info("version {}", response.getHttpVersion());
 		ChannelHandlerContext ctx = channelMapper.removeChannel(response.getRequestId());
 		if (ctx != null && ctx.channel().isActive()) {
             ctx.writeAndFlush(response).syncUninterruptibly();
         }
 		} catch (Throwable t) {
 			log.error("{}", t);
-			t.printStackTrace();
 		}
 	}
 }

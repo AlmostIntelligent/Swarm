@@ -17,7 +17,8 @@ public abstract class AbstractXMLReader<T> implements XMLReader<T> {
 
     private final DocumentLoader docLoader = new DefaultDocumentLoader();
 
-    private final Logger logger = LoggerFactory
+    @SuppressWarnings("unused")
+	private final Logger logger = LoggerFactory
             .getLogger(AbstractXMLReader.class);
 
     @Override

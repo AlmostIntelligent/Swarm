@@ -1,6 +1,7 @@
 package org.gethydrated.swarm.core.servlets.container;
 
 import org.gethydrated.swarm.core.messages.container.ApplicationFilterChain;
+import org.gethydrated.swarm.core.messages.http.SwarmHttpResponse;
 
 import akka.actor.UntypedActor;
 
@@ -17,8 +18,16 @@ public class FilterWorker extends UntypedActor {
 		if (o instanceof ApplicationFilterChain) {
 			ApplicationFilterChain chain = (ApplicationFilterChain) o;
 			chain.setContext(ctx);
-			chain.doFilter();
-			chain.source().tell(chain.response(), sender());
+			try {
+				chain.doFilter();
+				chain.source().tell(chain.response(), sender());
+			} catch (Exception e) {
+				SwarmHttpResponse r = chain.response();
+		        r.setStatus(504);
+		        r.setContent("Gateway timed out.");
+		        r.setContentType("text/plain");
+		        sender().tell(r,sender());
+			}
 		} else {
 			unhandled(o);
 		}

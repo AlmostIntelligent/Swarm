@@ -3,6 +3,7 @@ include 'launcher'
 include 'core'
 include 'spec'
 include 'servlets'
+include 'util-scan'
 
 rootProject.name = 'swarm'
 rootProject.children.each { project ->

@@ -1,5 +1,8 @@
+apply from: "$rootDir/gradle/provided.gradle"
+
 dependencies {
 	compile 'javax.servlet:javax.servlet-api:3.1.0'
     compile project(":core")
     compile libraries.vfs
+    provided 'org.glassfish.web:javax.servlet.jsp:2.3.2'
 }

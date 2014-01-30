@@ -35,7 +35,7 @@ public class ChannelMapper {
 		if (cfg.hasPath("http.request-timeout")) {
 			timeout = new FiniteDuration(cfg.getMilliseconds("http.request-timeout"), TimeUnit.MILLISECONDS);
 		} else {
-			timeout = new FiniteDuration(5000, TimeUnit.MILLISECONDS);
+			timeout = new FiniteDuration(15000, TimeUnit.MILLISECONDS);
 		}
 	}
 

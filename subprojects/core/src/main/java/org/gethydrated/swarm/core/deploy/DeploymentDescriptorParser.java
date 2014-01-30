@@ -32,6 +32,7 @@ public class DeploymentDescriptorParser implements XMLParser<DeploymentDescripto
             case "filter": startFilter(element); break;
             case "servlet-mapping": startServletMapping(element); break;
             case "filter-mapping": startFilterMapping(element); break;
+            case "listener-class": startListenerClass(element); break;
             default:
                 if (delegate != null) {
                     delegate.startElement(element);
@@ -39,7 +40,7 @@ public class DeploymentDescriptorParser implements XMLParser<DeploymentDescripto
         }
     }
 
-    @Override
+	@Override
     public void endElement(Element element) {
         switch (element.getNodeName()) {
             case "servlet": endServlet(element); break;
@@ -53,7 +54,7 @@ public class DeploymentDescriptorParser implements XMLParser<DeploymentDescripto
         }
     }
 
-    private void startFilter(Element element) {
+	private void startFilter(Element element) {
         delegate = new FilterDescriptorParser();
         delegate.startElement(element);
     }
@@ -98,4 +99,9 @@ public class DeploymentDescriptorParser implements XMLParser<DeploymentDescripto
         deploymentDescriptor.addFilterMapping((Mapping) delegate.getResult());
         delegate = null;
     }
+    
+	
+    private void startListenerClass(Element element) {
+    	deploymentDescriptor.addListener(element.getTextContent().replaceAll("\\s", ""));
+	}
 }

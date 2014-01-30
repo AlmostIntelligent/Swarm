@@ -6,12 +6,8 @@ import java.util.Enumeration;
 import javax.servlet.Servlet;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
-import javax.xml.parsers.DocumentBuilderFactory;
-
 import org.gethydrated.swarm.core.messages.container.Invoke;
 import org.gethydrated.swarm.core.messages.container.Invoke.InvokeServlet;
-import org.gethydrated.swarm.core.messages.http.SwarmHttpRequest;
-import org.gethydrated.swarm.core.messages.http.SwarmHttpResponse;
 import org.gethydrated.swarm.core.servlets.connector.SwarmServletRequestWrapper;
 import org.gethydrated.swarm.core.servlets.connector.SwarmServletResponseWrapper;
 
@@ -59,21 +55,19 @@ public class ServletContainer extends AbstractContainer implements ServletConfig
 	@Override
 	public void onReceive(Object o) throws Exception {
 		if (o instanceof Invoke.InvokeServlet) {
-			getLogger().info("Request: {} - {}", o, self());
+			getLogger().debug("Request: {} - {}", o, self());
 			Invoke.InvokeServlet invokation = (InvokeServlet) o;
 			if (getState() == LifecycleState.RUNNING) {
 				ClassLoader cl = Thread.currentThread().getContextClassLoader();
 		        try {
 		            Thread.currentThread().setContextClassLoader(getServletContext().getClassLoader());
 		            if (servletInstance != null && getState() == LifecycleState.RUNNING) {
-		            	SwarmServletRequestWrapper wrequest = (SwarmServletRequestWrapper) invokation.request();
-		            	SwarmServletResponseWrapper wresponse = (SwarmServletResponseWrapper) invokation.response();
-		            	wrequest.setContext(ctx);
-		            	wresponse.setContext(ctx);
-		            	getLogger().info("{}", wresponse);
+		            	SwarmServletRequestWrapper wrequest = new SwarmServletRequestWrapper(invokation.request(), ctx);
+		            	SwarmServletResponseWrapper wresponse = new SwarmServletResponseWrapper(invokation.response(), ctx);
+		            	getLogger().debug("{}", wresponse);
 		                servletInstance.service(wrequest, wresponse);
-		                getLogger().info("{}", wresponse);
-		                getLogger().info("{}", invokation.response());
+		                getLogger().debug("{}", wresponse);
+		                getLogger().debug("{}", invokation.response());
 		                wresponse.getWriter().flush();
 		            }
 		        } finally {

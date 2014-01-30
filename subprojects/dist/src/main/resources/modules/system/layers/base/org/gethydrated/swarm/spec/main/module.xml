@@ -9,12 +9,17 @@
     </resources>
 
     <dependencies>
-        <module name="javax.servlet.servlet-api" export="true"/>
-        <module name="javax.servlet.jsp.servletjsp-api" export="true"/>
-        <module name="org.gethydrated.swarm.servlets" export="true"/>
-        <module name="org.glassfish.web.servletjsp" export="true"/>
-        <module name="org.glassfish.el" export="true"/>
-        <module name="javax.api" export="true"/>
-        <module name="org.jboss.jboss-vfs" export="true"/>
+        <module name="javax.servlet.servlet-api" export="true" services="import"/>
+        <module name="javax.servlet.jsp.servletjsp-api" export="true" services="import"/>
+        <module name="org.gethydrated.swarm.servlets" export="true" services="import"/>
+        <module name="javax.api" export="true" services="import"/>
+        
+<!--         <module name="org.apache.tomcat.jasper" export="true" services="import"/>         -->
+<!--         <module name="javax.el.el-api" export="true" services="import"/> -->
+<!--         <module name="org.apache.tomcat.jasper-el" export="true" services="import"/> -->
+		<module name="org.glassfish.el" export="true"/>
+        <module name="org.glassfish.web.servletjsp" export="true" services="import"/>
+        
+        <module name="org.jboss.jboss-vfs" export="true" services="import"/>
     </dependencies>
 </module>

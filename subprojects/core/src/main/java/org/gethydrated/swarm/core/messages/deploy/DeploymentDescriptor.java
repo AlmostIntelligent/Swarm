@@ -11,6 +11,7 @@ public class DeploymentDescriptor {
     private List<FilterDescriptor> filters = new LinkedList<>();
     private Map<String, Mapping> servletMappings = new HashMap<>();
     private Map<String, Mapping> filterMappings = new HashMap<>();
+	private Set<String> listeners = new HashSet<>();
 
     public void addServlet(ServletDescriptor servletDescriptor) {
         if (servletDescriptor != null) {
@@ -65,4 +66,12 @@ public class DeploymentDescriptor {
                 ", filterMappings=" + filterMappings +
                 '}';
     }
+
+	public void addListener(String listener) {
+		listeners.add(listener);
+	}
+	
+	public Set<String> getListeners() {
+		return listeners ;
+	}
 }

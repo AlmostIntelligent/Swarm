@@ -17,14 +17,18 @@ import scala.concurrent.Await;
 import scala.concurrent.Future;
 import scala.concurrent.duration.Duration;
 import akka.actor.ActorRef;
+import akka.actor.Terminated;
 import akka.actor.UntypedActor;
 import akka.contrib.pattern.DistributedPubSubExtension;
 import akka.contrib.pattern.DistributedPubSubMediator;
+import akka.event.Logging;
+import akka.event.LoggingAdapter;
 import akka.util.Timeout;
 import static akka.pattern.Patterns.ask;
 
 public class SessionManager extends UntypedActor {
 
+	private LoggingAdapter logger = Logging.getLogger(getContext().system(), this);
 	private List<ActorRef> backups = new LinkedList<>();
 	private Map<String, ActorRef> waitlist = new HashMap<>();
 	private Map<String, Long> leases = new HashMap<>();
@@ -34,8 +38,14 @@ public class SessionManager extends UntypedActor {
 	public void onReceive(Object o) throws Exception {
 		if (o instanceof SessionBeacon) {
 			if (!backups.contains(sender())) {
+				logger.info("New session Backup found {}", sender());
 				backups.add(sender());
+				context().watch(getSender());
 			}
+			
+		} else if (o instanceof Terminated) {
+			logger.info("New session Backup disconntect {}", sender());
+			backups.remove(sender());
 		} else if (o instanceof SessionRequest) {
 			SessionRequest r = (SessionRequest) o;
 			if (sessions.containsKey(r.getId())) {

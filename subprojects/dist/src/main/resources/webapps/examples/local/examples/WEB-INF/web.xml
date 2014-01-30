@@ -96,10 +96,12 @@
     <servlet>
         <servlet-name>RequestInfoExample</servlet-name>
         <servlet-class>RequestInfoExample</servlet-class>
+        <load-on-startup>2</load-on-startup>
     </servlet>
     <servlet>
         <servlet-name>RequestHeaderExample</servlet-name>
         <servlet-class>RequestHeaderExample</servlet-class>
+        <load-on-startup>1</load-on-startup>
     </servlet>
     <servlet>
         <servlet-name>RequestParamExample</servlet-name>
