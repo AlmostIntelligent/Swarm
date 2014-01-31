@@ -90,6 +90,10 @@
         <servlet-class>compressionFilters.CompressionFilterTestServlet</servlet-class>
     </servlet>   -->
     <servlet>
+    	<servlet-name>PerformanceTest</servlet-name>
+    	<servlet-class>PerformanceTest</servlet-class>
+    </servlet>
+    <servlet>
         <servlet-name>HelloWorldExample</servlet-name>
         <servlet-class>HelloWorldExample</servlet-class>
     </servlet>
@@ -147,7 +151,12 @@
     <servlet-mapping>
         <servlet-name>SessionExample</servlet-name>
         <url-pattern>/servlets/servlet/SessionExample</url-pattern>
-    </servlet-mapping> <!--
+    </servlet-mapping>
+    <servlet-mapping>
+    	<servlet-name>PerformanceTest</servlet-name>
+    	<url-pattern>/perf</url-pattern>
+    </servlet-mapping>
+     <!--
     <servlet-mapping>
         <servlet-name>ServletToJsp</servlet-name>
         <url-pattern>/servletToJsp</url-pattern>

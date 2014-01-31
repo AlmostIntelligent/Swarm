@@ -24,6 +24,7 @@ import javax.servlet.ServletContainerInitializer;
 import javax.servlet.ServletContextListener;
 import javax.servlet.ServletRegistration.Dynamic;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.JarURLConnection;
 import java.net.URL;
@@ -100,7 +101,7 @@ public class ApplicationContextFactory {
         	files.add(connection.getJarFileURL().getFile());
         }
         for(String s : files) {
-        	jspClasspath.append(s).append(";");
+        	jspClasspath.append(s).append(File.pathSeparatorChar);
         }
         
         ctx.setAttribute("org.apache.catalina.jsp_classpath", jspClasspath.toString());
@@ -149,7 +150,7 @@ public class ApplicationContextFactory {
 	private static void addResources(VirtualFile root, DeploymentModuleLoader dml, ApplicationContext ctx, StringBuffer jspClasspath) throws IOException {
         if (root.getChild("WEB-INF/classes").exists()) {
             dml.addResourceLoader(new VFSResourceLoader(root.getChild("WEB-INF/classes"), "WEB-INF/classes"));
-            jspClasspath.append(root.getChild("WEB-INF/classes").getPhysicalFile()).append(";");
+            jspClasspath.append(root.getChild("WEB-INF/classes").getPhysicalFile()).append(File.pathSeparatorChar);
         }
         if (root.getChild("WEB-INF/lib").exists()) {
             TempFileProvider tmp = TempFileProvider.create("tmp", Executors.newScheduledThreadPool(2));
@@ -157,7 +158,7 @@ public class ApplicationContextFactory {
             FilterVirtualFileVisitor visitor = new FilterVirtualFileVisitor(jarFilter, VisitorAttributes.RECURSE);
             root.getChild("WEB-INF/lib").visit(visitor);
             for (VirtualFile file : visitor.getMatched()) {
-            	jspClasspath.append(file.getPhysicalFile().toString()).append(";");
+            	jspClasspath.append(file.getPhysicalFile().toString()).append(File.pathSeparatorChar);
                 VFS.mountZip(file, file, tmp);
                 dml.addResourceLoader(new VFSResourceLoader(file, file.getName()));
             }

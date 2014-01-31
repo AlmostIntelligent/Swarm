@@ -70,7 +70,7 @@ else
    sleep 2s
  fi
 fi
-export $SWARM_HOME
+export SWARM_HOME=$SWARM_HOME
 
 # Setup the JVM
 if [ "x$JAVA" = "x" ]; then
